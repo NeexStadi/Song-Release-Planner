@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Song Sequence & Tracklist Builder</title>
+  <title>Song Release Planner</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -218,13 +218,16 @@
     }
 
     .legend-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-    .tag-container { display: flex; gap: 0.5rem; }
+    .tag-container { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 
     .drag-tag {
       padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem;
       font-weight: bold; cursor: grab; user-select: none;
       text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.15s ease;
     }
+
+    .drag-tag:hover { transform: scale(1.05); }
 
     .badge-high { background: rgba(239, 68, 68, 0.25); color: var(--high-energy); border: 1px solid var(--high-energy); }
     .badge-mid { background: rgba(245, 158, 11, 0.25); color: var(--mid-energy); border: 1px solid var(--mid-energy); }
@@ -279,14 +282,14 @@
       100% { transform: translateX(0); opacity: 1; }
     }
 
-    .song-card.drop-before::before, .container-card.drop-before::before {
-      content: ''; position: absolute; top: -6px; left: 0; right: 0;
+    .song-card.drop-before::before, .container-card.drop-before::before, .nested-song-card.drop-before::before {
+      content: ''; position: absolute; top: -4px; left: 0; right: 0;
       height: 4px; background-color: var(--drop-line-color);
       border-radius: 2px; box-shadow: 0 0 8px var(--drop-line-color); z-index: 10;
     }
 
-    .song-card.drop-after::after, .container-card.drop-after::after {
-      content: ''; position: absolute; bottom: -6px; left: 0; right: 0;
+    .song-card.drop-after::after, .container-card.drop-after::after, .nested-song-card.drop-after::after {
+      content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
       height: 4px; background-color: var(--drop-line-color);
       border-radius: 2px; box-shadow: 0 0 8px var(--drop-line-color); z-index: 10;
     }
@@ -295,7 +298,7 @@
       border: 2px dashed #6366f1 !important; background: #2a3852 !important;
     }
 
-    .song-card.dragging, .container-card.dragging { opacity: 0.25; }
+    .song-card.dragging, .container-card.dragging, .nested-song-card.dragging { opacity: 0.25; }
 
     .drag-handle { color: var(--text-muted); font-size: 1.2rem; cursor: grab; }
     .track-num { font-size: 1.1rem; font-weight: bold; color: var(--text-muted); min-width: 24px; }
@@ -358,10 +361,16 @@
     .nested-song-card {
       background: #1e293b; border-radius: 6px; padding: 0.6rem 0.8rem;
       display: flex; align-items: center; gap: 0.6rem; border: 1px solid #334155; cursor: grab;
-      transition: transform 0.25s ease, opacity 0.25s ease;
+      position: relative; transition: transform 0.25s ease, opacity 0.25s ease;
     }
 
     .nested-song-card.trashing { transform: translateX(80px); opacity: 0; background: #7f1d1d !important; }
+
+    .reorder-sub-btn {
+      background: #0f172a; border: 1px solid #475569; color: var(--text-muted);
+      border-radius: 4px; font-size: 0.7rem; padding: 1px 4px; cursor: pointer;
+    }
+    .reorder-sub-btn:hover { color: var(--text); background: var(--card-hover); }
 
     /* Extended Toast Notification Banner */
     .trash-toast {
@@ -439,7 +448,7 @@
     </div>
     
     <div id="calendarDisplayArea">
-      <!-- Rendered dynamically (Grid or 12-Month Year View) -->
+      <!-- Rendered dynamically -->
     </div>
 
     <div id="calSelectedDayDetails" style="text-align:left; font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; min-height:42px; background:#0f172a; padding:0.6rem; border-radius:6px; border:1px solid #334155;">
@@ -452,13 +461,13 @@
 
 <div class="container">
   <header>
-    <h1>🎵 Interactive Song Sequence Builder</h1>
+    <h1>🎵 Song Release Planner</h1>
     <p>Reorder tracks or top order buttons. Auto-saves locally to browser memory.</p>
   </header>
 
   <!-- Controls Bar -->
   <div class="controls-bar">
-    <!-- Row 1: List Navigation Selector & Global Controls -->
+    <!-- Row 1: List Navigation Selector & Global Controls (Removed "Browse Lists:" label) -->
     <div class="controls-row-1">
       <select class="dropdown-selector" id="listSelector" onchange="handleDropdownSelect(this.value)"></select>
       <button class="btn" onclick="saveNewList()">📋 Duplicate List</button>
@@ -499,14 +508,14 @@
     <!-- Multi-Select & Global Color Batch Bar -->
     <div class="batch-tools">
       <label><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"> Select All Tracks</label>
-      <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click for range | Option+Click clears all)</span>
+      <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click range | Option+Click clears all)</span>
       <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
         <span>🎨 Batch Color Dial:</span>
         <input type="color" class="color-picker" id="globalColorPicker" value="#6366f1" onchange="applyGlobalColor(this.value)" title="Change color of all checked songs">
       </div>
     </div>
 
-    <!-- Copy / Paste Songs Row -->
+    <!-- Copy / Paste Toolbar -->
     <div class="clipboard-bar">
       <span>Clipboard Tools:</span>
       <div style="display:flex; gap:0.5rem;">
@@ -517,11 +526,9 @@
 
     <!-- Energy Legend (Moved directly under Clipboard Tools) -->
     <div class="energy-legend">
-      <span class="legend-title">Drag an Energy Tag onto any song:</span>
-      <div class="tag-container">
-        <div class="drag-tag badge-low" draggable="true" ondragstart="handleEnergyDragStart(event, 'Low')">🟢 Low</div>
-        <div class="drag-tag badge-mid" draggable="true" ondragstart="handleEnergyDragStart(event, 'Mid')">🟡 Mid</div>
-        <div class="drag-tag badge-high" draggable="true" ondragstart="handleEnergyDragStart(event, 'High')">🔴 High</div>
+      <span class="legend-title">Drag or click tag to assign:</span>
+      <div class="tag-container" id="energyTagsContainer">
+        <!-- Rendered dynamically with add tag capability -->
       </div>
     </div>
   </div>
@@ -531,7 +538,7 @@
 </div>
 
 <script>
-  // Complete Master Vault
+  // Master Catalog
   const fullSongMasterVault = [
     "Altior", "Ardente", "The Beginning", "Blame It On The Vibe",
     "Blankface", "Boyz II Men", "Closer To You", "Crazy Faith", "Curiosity",
@@ -544,6 +551,13 @@
     "Show Stopper", "Signal", "Slowmotion", "Something I Want", "Soul",
     "Soul Tied", "Spa Day", "Tension", "Throwed", "Unstoppable",
     "V12", "You Knew First", "123"
+  ];
+
+  // Default Custom Tags
+  let customEnergyTags = [
+    { label: "Low", color: "#10b981", class: "badge-low" },
+    { label: "Mid", color: "#f59e0b", class: "badge-mid" },
+    { label: "High", color: "#ef4444", class: "badge-high" }
   ];
 
   const initialExportData = {
@@ -621,18 +635,19 @@
   let lastCheckedCatalogBox = null;
 
   let calCurrentDate = new Date();
-  let calendarViewMode = "month"; // "month" or "year"
+  let calendarViewMode = "month";
 
   let draggedItemData = null;
   let draggedEnergyValue = null;
   let draggedButtonKey = null;
 
   function loadStateFromLocalStorage() {
-    let saved = localStorage.getItem("song_builder_master_v8");
+    let saved = localStorage.getItem("song_builder_master_v9");
     if (saved) {
       try {
         let parsed = JSON.parse(saved);
         if (parsed.groups) masterDatabase = parsed;
+        if (parsed.customEnergyTags) customEnergyTags = parsed.customEnergyTags;
       } catch (e) {
         console.error("Error restoring local state", e);
       }
@@ -640,7 +655,8 @@
   }
 
   function saveStateToLocalStorage() {
-    localStorage.setItem("song_builder_master_v8", JSON.stringify(masterDatabase));
+    masterDatabase.customEnergyTags = customEnergyTags;
+    localStorage.setItem("song_builder_master_v9", JSON.stringify(masterDatabase));
   }
 
   function getActiveGroupData() {
@@ -658,7 +674,6 @@
     document.getElementById("undoBtn").disabled = false;
   }
 
-  /* Extended Toast Banner (3.5s duration) & Reverse Undo Animation */
   function triggerTrashToast(message = "🗑️ Item trashed & returned to All Songs library") {
     const toast = document.getElementById("trashToast");
     toast.textContent = message;
@@ -673,7 +688,6 @@
 
     renderList();
 
-    // Trigger reverse visual restoration effect
     document.querySelectorAll(".song-card, .container-card").forEach(card => {
       card.classList.add("untrashing");
       setTimeout(() => card.classList.remove("untrashing"), 400);
@@ -700,8 +714,72 @@
       else renderSingleSongCard(listEl, item, index);
     });
 
+    renderEnergyLegend();
     renderControlsUI();
     updateClipboardUI();
+  }
+
+  /* Render Custom Energy Legend Toolbar with Add Tag Capability */
+  function renderEnergyLegend() {
+    const container = document.getElementById("energyTagsContainer");
+    container.innerHTML = "";
+
+    customEnergyTags.forEach(tag => {
+      let div = document.createElement("div");
+      div.className = `drag-tag ${tag.class || ''}`;
+      if (!tag.class) {
+        div.style.background = `${tag.color}25`;
+        div.style.color = tag.color;
+        div.style.border = `1px solid ${tag.color}`;
+      }
+      div.draggable = true;
+      div.textContent = tag.label;
+      div.ondragstart = (e) => handleEnergyDragStart(e, tag.label);
+      container.appendChild(div);
+    });
+
+    let addBtn = document.createElement("button");
+    addBtn.className = "btn btn-sm";
+    addBtn.style.borderRadius = "20px";
+    addBtn.style.padding = "0.25rem 0.6rem";
+    addBtn.innerHTML = "➕ Tag";
+    addBtn.onclick = createNewCustomTag;
+    container.appendChild(addBtn);
+  }
+
+  function createNewCustomTag() {
+    let name = prompt("Enter new energy tag name (e.g., 'Radio', 'Focus', 'Acoustic'):");
+    if (!name || !name.trim()) return;
+
+    let color = prompt("Enter a hex color code for this tag (e.g., '#8b5cf6'):", "#8b5cf6");
+    if (!color) color = "#8b5cf6";
+
+    customEnergyTags.push({
+      label: name.trim(),
+      color: color.trim()
+    });
+
+    renderList();
+  }
+
+  /* Cycle energy tag on badge click */
+  function cycleEnergyTag(songId) {
+    let song = findSongById(getCurrentSongs(), songId);
+    if (!song) return;
+
+    pushUndoState();
+    let tagLabels = customEnergyTags.map(t => t.label);
+    let currentIdx = tagLabels.indexOf(song.energy);
+    let nextIdx = (currentIdx + 1) % tagLabels.length;
+
+    song.energy = tagLabels[nextIdx];
+    renderList();
+  }
+
+  function getTagBadgeHTML(energyLabel, songId) {
+    let tag = customEnergyTags.find(t => t.label === energyLabel) || { label: energyLabel, color: '#6366f1', class: 'badge-mid' };
+    let styleAttr = tag.class ? '' : `style="background:${tag.color}25; color:${tag.color}; border:1px solid ${tag.color};"`;
+    return `<span class="drag-tag ${tag.class || ''}" ${styleAttr} onclick="cycleEnergyTag('${songId}')" title="Click to cycle tag">${energyLabel}</span>`;
   }
 
   function renderSingleSongCard(containerEl, song, index) {
@@ -710,8 +788,6 @@
     card.draggable = true;
     card.dataset.id = song.id;
     card.style.borderLeftColor = song.color || "#6366f1";
-
-    const badgeClass = song.energy === "High" ? "badge-high" : song.energy === "Low" ? "badge-low" : "badge-mid";
 
     card.innerHTML = `
       <span class="drag-handle">☰</span>
@@ -729,7 +805,7 @@
         </div>
       </div>
       <div class="card-actions">
-        <span class="drag-tag ${badgeClass}">${song.energy}</span>
+        ${getTagBadgeHTML(song.energy, song.id)}
         <input type="checkbox" class="select-checkbox main-list-chk" ${song.selected ? 'checked' : ''} onclick="handleMainCheckboxClick(event, '${song.id}')" title="Select for Batch Editing">
         <input type="color" class="color-picker" value="${song.color || '#6366f1'}" onchange="changeColor('${song.id}', this.value)" title="Color Code">
         <button class="delete-btn" onclick="deleteSong('${song.id}')" title="Delete">🗑️</button>
@@ -740,17 +816,21 @@
     containerEl.appendChild(card);
   }
 
+  /* Render Container Card with Full Inner Song Ordering & Drag Support */
   function renderContainerCard(containerEl, group, index) {
     const card = document.createElement("li");
     card.className = "container-card";
     card.draggable = true;
     card.dataset.id = group.id;
 
-    let subCardsHTML = group.songs.map((song) => {
-      const badgeClass = song.energy === "High" ? "badge-high" : song.energy === "Low" ? "badge-low" : "badge-mid";
+    let subCardsHTML = group.songs.map((song, sIdx) => {
       return `
-        <div class="nested-song-card" data-subid="${song.id}" draggable="true">
+        <div class="nested-song-card" data-subid="${song.id}" data-parentid="${group.id}" draggable="true">
           <span class="drag-handle">☰</span>
+          <div style="display:flex; flex-direction:column; gap:1px;">
+            <button class="reorder-sub-btn" onclick="moveSubSong('${group.id}', ${sIdx}, -1)">▲</button>
+            <button class="reorder-sub-btn" onclick="moveSubSong('${group.id}', ${sIdx}, 1)">▼</button>
+          </div>
           <div class="song-content">
             <div class="song-title-row">
               <span class="song-title" onclick="renameSong('${song.id}')">${song.title}</span>
@@ -758,7 +838,7 @@
             </div>
             <div class="song-notes">${song.notes ? song.notes : "<em>No notes...</em>"} <button class="edit-btn" onclick="editNotes('${song.id}')">✏️ Edit</button></div>
           </div>
-          <span class="drag-tag ${badgeClass}">${song.energy}</span>
+          ${getTagBadgeHTML(song.energy, song.id)}
           <input type="checkbox" class="select-checkbox main-list-chk" ${song.selected ? 'checked' : ''} onclick="handleMainCheckboxClick(event, '${song.id}')" title="Select for Batch Editing">
           <button class="delete-btn" onclick="removeSongFromContainer('${group.id}', '${song.id}')" title="Remove from Group">❌</button>
         </div>
@@ -775,27 +855,79 @@
         <input type="date" class="date-picker-input" value="${group.releaseDate || ''}" onchange="updateContainerReleaseDate('${group.id}', this.value)">
         <button class="delete-btn" onclick="deleteContainerPrompt('${group.id}')" title="Delete Group">🗑️ Group</button>
       </div>
-      <div class="nested-song-list">
+      <div class="nested-song-list" data-containerid="${group.id}">
         ${subCardsHTML}
       </div>
     `;
 
-    card.querySelectorAll(".nested-song-card").forEach(nestedEl => {
+    // Inner Drag & Drop Listeners for nested songs inside group
+    card.querySelectorAll(".nested-song-card").forEach((nestedEl, nIdx) => {
       const subId = nestedEl.dataset.subid;
+      
       nestedEl.addEventListener("dragstart", (e) => {
         e.stopPropagation();
-        draggedItemData = { type: 'nested', itemId: subId, parentContainerId: group.id };
+        draggedItemData = { type: 'nested', itemId: subId, parentContainerId: group.id, nestedIndex: nIdx };
         nestedEl.classList.add("dragging");
       });
+
       nestedEl.addEventListener("dragend", (e) => {
         e.stopPropagation();
         nestedEl.classList.remove("dragging");
         clearDropIndicators();
       });
+
+      nestedEl.addEventListener("dragover", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        clearDropIndicators();
+
+        if (draggedItemData && draggedItemData.type === 'nested' && draggedItemData.parentContainerId === group.id) {
+          const rect = nestedEl.getBoundingClientRect();
+          const offsetY = e.clientY - rect.top;
+          if (offsetY < rect.height / 2) nestedEl.classList.add("drop-before");
+          else nestedEl.classList.add("drop-after");
+        }
+      });
+
+      nestedEl.addEventListener("drop", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (draggedItemData && draggedItemData.type === 'nested' && draggedItemData.parentContainerId === group.id) {
+          const isBefore = nestedEl.classList.contains("drop-before");
+          clearDropIndicators();
+
+          pushUndoState();
+          let targetIndex = nIdx;
+          let fromIndex = draggedItemData.nestedIndex;
+
+          let movedSong = group.songs.splice(fromIndex, 1)[0];
+          if (fromIndex < targetIndex && isBefore) targetIndex--;
+          else if (fromIndex > targetIndex && !isBefore) targetIndex++;
+
+          group.songs.splice(targetIndex, 0, movedSong);
+          renderList();
+        }
+      });
     });
 
     addDragAndDropListeners(card, group.id, 'container');
     containerEl.appendChild(card);
+  }
+
+  /* Sub-song ordering helper buttons */
+  function moveSubSong(containerId, index, delta) {
+    let container = getCurrentSongs().find(s => s.id === containerId);
+    if (!container || !container.songs) return;
+
+    let targetIdx = index + delta;
+    if (targetIdx < 0 || targetIdx >= container.songs.length) return;
+
+    pushUndoState();
+    let temp = container.songs[index];
+    container.songs[index] = container.songs[targetIdx];
+    container.songs[targetIdx] = temp;
+    renderList();
   }
 
   function updateContainerReleaseDate(containerId, dateVal) {
@@ -807,9 +939,7 @@
     }
   }
 
-  /* Shift + Click Range Selection AND Option/Alt + Click Clear All */
   function handleMainCheckboxClick(e, songId) {
-    // Option/Alt + Click clears ALL checkboxes
     if (e.altKey) {
       e.preventDefault();
       toggleSelectAll(false);
@@ -913,7 +1043,7 @@
   }
 
   function clearDropIndicators() {
-    document.querySelectorAll(".song-card, .container-card").forEach(c => {
+    document.querySelectorAll(".song-card, .container-card, .nested-song-card").forEach(c => {
       c.classList.remove("drop-before", "drop-after", "drop-merge-target", "drag-over-energy");
     });
   }
@@ -1025,7 +1155,7 @@
     renderList();
   }
 
-  /* Release Calendar Modal Engine with 12-Month Year View & iCal Export */
+  /* Release Calendar Modal Engine */
   function openCalendarModal() {
     renderCalendarView();
     document.getElementById("calendarModal").style.display = "flex";
@@ -1125,7 +1255,6 @@
       displayArea.appendChild(grid);
 
     } else {
-      // 12-Month Year View
       document.getElementById("calMonthYearTitle").textContent = `Year ${year}`;
       document.getElementById("calPrevBtn").style.display = "inline-block";
       document.getElementById("calNextBtn").style.display = "inline-block";
@@ -1165,7 +1294,6 @@
     }
   }
 
-  /* Export Scheduled Releases to standard iCal .ics format */
   function exportToiCal() {
     const songs = getCurrentSongs();
     let events = [];
@@ -1471,7 +1599,6 @@ END:VCALENDAR`;
     }
   }
 
-  /* Sub-second Animated Trashing Function */
   function deleteSong(id) {
     let group = getActiveGroupData();
     let songs = getCurrentSongs();
@@ -1630,10 +1757,8 @@ END:VCALENDAR`;
     const group = getActiveGroupData();
     const listData = group.listsDatabase[group.currentKey];
 
-    // Title Display
     document.getElementById("activeListDisplay").textContent = `${listData.listName} (${masterDatabase.activeGroup})`;
 
-    // Favorite Toggle Button State
     const favBtn = document.getElementById("favToggleBtn");
     if (listData.isFav) {
       favBtn.textContent = "⭐ Remove Favorite Button";
@@ -1643,7 +1768,6 @@ END:VCALENDAR`;
       favBtn.classList.remove("is-fav");
     }
 
-    // Categorized Dropdown Selector
     const selector = document.getElementById("listSelector");
     selector.innerHTML = "";
 
@@ -1671,7 +1795,6 @@ END:VCALENDAR`;
     newGrpOption.textContent = "➕ Create New Sub-Group...";
     selector.appendChild(newGrpOption);
 
-    // Render Gold Drag-and-Drop Favorite Buttons
     const favBar = document.getElementById("favoriteButtonsBar");
     favBar.innerHTML = "";
 
