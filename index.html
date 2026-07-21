@@ -467,16 +467,9 @@
 
   <!-- Controls Bar -->
   <div class="controls-bar">
-    <!-- Row 1: List Navigation Selector & Global Controls (Removed "Browse Lists:" label) -->
+    <!-- Row 1: List Navigation Selector -->
     <div class="controls-row-1">
       <select class="dropdown-selector" id="listSelector" onchange="handleDropdownSelect(this.value)"></select>
-      <button class="btn" onclick="saveNewList()">📋 Duplicate List</button>
-      <button class="btn" onclick="startFreshList()">✨ New List</button>
-      <button class="btn" onclick="exportOrder()">📋 Copy Tracklist to Clipboard</button>
-      <button class="btn" onclick="exportProjectFile()">📥 Export</button>
-      <button class="btn" onclick="triggerImportFile()">📤 Load</button>
-      <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="importProjectFile(event)">
-      <button class="btn btn-undo" id="undoBtn" onclick="undoLastAction()" disabled title="Undo last change">↩️ Undo</button>
     </div>
 
     <!-- Row 2: Dedicated Profile & Songs Workspace Controls -->
@@ -485,6 +478,17 @@
       <button class="btn btn-primary" onclick="openAllSongsModal()">🎵 All Songs Catalog</button>
       <button class="btn btn-success" onclick="addNewSong()">➕ Add Song</button>
       <button class="btn" style="background:#4f46e5; margin-left:auto;" onclick="openCalendarModal()">📅 Release Calendar</button>
+    </div>
+
+    <!-- Row 3: Global Action Controls -->
+    <div class="controls-row-1">
+      <button class="btn" onclick="saveNewList()">📋 Duplicate List</button>
+      <button class="btn" onclick="startFreshList()">✨ New List</button>
+      <button class="btn" onclick="exportOrder()">📋 Copy Tracklist to Clipboard</button>
+      <button class="btn" onclick="exportProjectFile()">📥 Export</button>
+      <button class="btn" onclick="triggerImportFile()">📤 Load</button>
+      <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="importProjectFile(event)">
+      <button class="btn btn-undo" id="undoBtn" onclick="undoLastAction()" disabled title="Undo last change">↩️ Undo</button>
     </div>
 
     <!-- Favorite Orders Section -->
