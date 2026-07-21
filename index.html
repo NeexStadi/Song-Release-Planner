@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Song Release Planner</title>
+  <title>Content Release Planner</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -398,6 +398,32 @@
 <!-- Toast Banner -->
 <div class="trash-toast" id="trashToast">🗑️ Item trashed & returned to All Songs library</div>
 
+<!-- Help Guide Modal Overlay -->
+<div class="modal-overlay" id="helpModal" style="display:none;" onclick="handleModalBackdropClick(event, 'helpModal')">
+  <div class="modal-box" style="max-width:650px; text-align:left;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h2 style="margin:0;">❓ Content Release Planner - Help & Guide</h2>
+      <button class="btn btn-sm btn-primary" id="editHelpBtn" onclick="toggleEditHelpMode()">✏️ Edit Guide</button>
+    </div>
+    
+    <!-- View Mode -->
+    <div id="helpViewArea" style="font-size:0.9rem; line-height:1.6; color:#e2e8f0; max-height:400px; overflow-y:auto; background:#0f172a; padding:1rem; border-radius:8px; border:1px solid #334155; margin-bottom:1rem;">
+      <!-- Content loaded dynamically -->
+    </div>
+
+    <!-- Edit Mode (hidden by default) -->
+    <div id="helpEditArea" style="display:none; margin-bottom:1rem;">
+      <textarea id="helpTextarea" style="width:100%; height:280px; background:#0f172a; color:#f8fafc; border:1px solid #475569; border-radius:8px; padding:0.75rem; font-family:inherit; font-size:0.9rem; line-height:1.5; resize:vertical;"></textarea>
+      <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;">💡 HTML basic formatting or line breaks are allowed.</div>
+    </div>
+
+    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+      <button class="btn btn-success" id="saveHelpBtn" style="display:none;" onclick="saveHelpGuideContent()">💾 Save Changes</button>
+      <button class="btn" onclick="closeHelpModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Profile Selection Overlay Modal -->
 <div class="modal-overlay" id="userModal" style="display:none;" onclick="handleModalBackdropClick(event, 'userModal')">
   <div class="modal-box">
@@ -470,7 +496,7 @@
 
 <div class="container">
   <header>
-    <h1>🎵 Song Release Planner</h1>
+    <h1>Content Release Planner</h1>
     <p>Reorder tracks or top order buttons. Auto-saves locally to browser memory.</p>
   </header>
 
@@ -486,6 +512,7 @@
       <button class="btn" onclick="openUserModal()">👤 Switch Profile</button>
       <button class="btn btn-primary" onclick="openAllSongsModal()">🎵 All Songs Catalog</button>
       <button class="btn btn-success" onclick="addNewSong()">➕ Add Song</button>
+      <button class="btn" style="background:#0284c7;" onclick="openHelpModal()">❓ Help & Guide</button>
       <button class="btn" style="background:#4f46e5; margin-left:auto;" onclick="openCalendarModal()">📅 Release Calendar</button>
     </div>
 
@@ -518,16 +545,6 @@
     </div>
     <button class="favorite-toggle-btn" id="favToggleBtn" onclick="toggleCurrentFavorite()">⭐ Create Favorite Button</button>
 
-    <!-- Multi-Select & Global Color Batch Bar -->
-    <div class="batch-tools">
-      <label><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"> Select All Tracks</label>
-      <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click range | Option+Click clears all)</span>
-      <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
-        <span>🎨 Batch Color Dial:</span>
-        <input type="color" class="color-picker" id="globalColorPicker" value="#6366f1" onchange="applyGlobalColor(this.value)" title="Change color of all checked songs">
-      </div>
-    </div>
-
     <!-- Copy / Paste Toolbar -->
     <div class="clipboard-bar">
       <span>Clipboard Tools:</span>
@@ -537,11 +554,21 @@
       </div>
     </div>
 
-    <!-- Energy Legend (Moved directly under Clipboard Tools) -->
+    <!-- Energy Legend (Positioned above Batch Tools) -->
     <div class="energy-legend">
       <span class="legend-title">Drag or click tag to assign:</span>
       <div class="tag-container" id="energyTagsContainer">
         <!-- Rendered dynamically with add tag capability -->
+      </div>
+    </div>
+
+    <!-- Multi-Select & Global Color Batch Bar (Moved below Energy Legend) -->
+    <div class="batch-tools">
+      <label><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"> Select All Tracks</label>
+      <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click range | Option+Click clears all)</span>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+        <span>🎨 Batch Color Dial:</span>
+        <input type="color" class="color-picker" id="globalColorPicker" value="#6366f1" onchange="applyGlobalColor(this.value)" title="Change color of all checked songs">
       </div>
     </div>
   </div>
@@ -590,69 +617,19 @@
             "id": "c_1784600045928", "type": "container", "title": "Pressure / Pull Up On Me | DUAL RELEASE", "releaseDate": "",
             "songs": [
               { "id": "s2", "title": "Pressure", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
-              { "id": "s3", "title": "Pull Up On Me", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
-            ]
-          },
-          { "id": "s4", "title": "No Comment", "energy": "High", "color": "#ef4444", "releaseDate": "", "selected": false, "notes": "Feature - Exposure - High Energy" },
-          { "id": "s5", "title": "Christmas Song", "energy": "Mid", "color": "#10b981", "releaseDate": "", "selected": false, "notes": "Must be #4 if December release" },
-          { "id": "s6", "title": "Hot Boy", "energy": "High", "color": "#f59e0b", "releaseDate": "", "selected": false, "notes": "Top of the year potential" },
-          { "id": "s7", "title": "Slowmotion", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Fresh / new vibe" },
-          { "id": "s8", "title": "I Promise", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Cool Factor" },
-          { "id": "s9", "title": "V12", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
-          { "id": "s10", "title": "Rendezvous", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
-          { "id": "s11", "title": "Show Stopper", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
-        ]
-      },
-      "order2": {
-        "listName": "Nico_3 Song Release", "isFav": true,
-        "songs": [
-          {
-            "id": "c_1784600154430", "type": "container", "title": "Midas / Losing Slot", "releaseDate": "",
-            "songs": [
-              { "id": "s1", "title": "Midas", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Strong melodies, single worthy." },
-              { "id": "s12", "title": "Losing", "energy": "Low", "color": "#3b82f6", "releaseDate": "", "selected": false, "notes": "Slower, very strong lyric/melody" }
-            ]
-          },
-          {
-            "id": "c_1784600229600", "type": "container", "title": "No Comment / Slowmotion Slot", "releaseDate": "",
-            "songs": [
-              { "id": "s4", "title": "No Comment", "energy": "High", "color": "#ef4444", "releaseDate": "", "selected": false, "notes": "Feature - Exposure - High Energy" },
-              { "id": "s7", "title": "Slowmotion", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Fresh / new vibe" },
-              { "id": "s8", "title": "I Promise", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Cool Factor" },
-              { "id": "s11", "title": "Show Stopper", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
-            ]
-          },
-          { "id": "s2", "title": "Pressure", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
-          { "id": "s5", "title": "Christmas Song", "energy": "Mid", "color": "#10b981", "releaseDate": "", "selected": false, "notes": "Must be #4 if December release" },
-          { "id": "s6", "title": "Hot Boy", "energy": "High", "color": "#f59e0b", "releaseDate": "", "selected": false, "notes": "Top of the year potential" },
-          { "id": "s9", "title": "V12", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
-          { "id": "s10", "title": "Rendezvous", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
-          { "id": "s3", "title": "Pull Up On Me", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
-        ]
-      }
-    },
-    "favoritesOrder": ["order1", "order2"],
-    "currentKey": "order1"
-  };
-
-  let masterDatabase = {
-    activeGroup: "Nico's Lists",
-    groups: {
-      "Nico's Lists": JSON.parse(JSON.stringify(initialExportData))
-    }
-  };
-
-  let undoHistory = [];
-  let copiedSongsBuffer = [];
-  let lastCheckedMainBox = null;
-  let lastCheckedCatalogBox = null;
-
-  let calCurrentDate = new Date();
-  let calendarViewMode = "month";
-
-  let draggedItemData = null;
-  let draggedEnergyValue = null;
-  let draggedButtonKey = null;
+  let defaultHelpGuide = `
+    <h3 style="margin-top:0; color:var(--gold-accent);">🚀 Getting Started with Content Release Planner</h3>
+    <p><strong>1. Drag & Drop Reordering:</strong> Click and drag any track card to change its position in the list.</p>
+    <p><strong>2. Option & Bundle Groups:</strong> Drag one song directly onto another to create a Group. Use the <code>🔄 Toggle Type</code> button to switch between:
+      <ul>
+        <li><strong>⚖️ EITHER/OR:</strong> Decisions/candidates for a release date.</li>
+        <li><strong>📦 BUNDLE:</strong> Multiple tracks/items dropping simultaneously.</li>
+      </ul>
+    </p>
+    <p><strong>3. Energy & Custom Tags:</strong> Click any energy badge directly on a song to cycle tags, or drag tags from the legend onto songs. Create new tags using the <code>➕ Tag</code> button.</p>
+    <p><strong>4. Release Calendar & iCal Export:</strong> Set release dates on tracks or groups, view them on the interactive Calendar, and export <code>.ics</code> files to import into Apple Calendar or Google Calendar.</p>
+    <p><strong>5. Profiles & Multi-List Management:</strong> Create or switch user profiles/sub-groups and create top favorite order buttons for rapid A/B testing.</p>
+  `;
 
   function loadStateFromLocalStorage() {
     let saved = localStorage.getItem("song_builder_master_v9");
@@ -661,10 +638,60 @@
         let parsed = JSON.parse(saved);
         if (parsed.groups) masterDatabase = parsed;
         if (parsed.customEnergyTags) customEnergyTags = parsed.customEnergyTags;
+        if (parsed.helpGuideContent) defaultHelpGuide = parsed.helpGuideContent;
       } catch (e) {
         console.error("Error restoring local state", e);
       }
     }
+  }
+
+  function saveStateToLocalStorage() {
+    masterDatabase.customEnergyTags = customEnergyTags;
+    masterDatabase.helpGuideContent = defaultHelpGuide;
+    localStorage.setItem("song_builder_master_v9", JSON.stringify(masterDatabase));
+  }
+
+  /* Help Modal Handler */
+  function openHelpModal() {
+    document.getElementById("helpViewArea").innerHTML = defaultHelpGuide;
+    document.getElementById("helpTextarea").value = defaultHelpGuide;
+    document.getElementById("helpViewArea").style.display = "block";
+    document.getElementById("helpEditArea").style.display = "none";
+    document.getElementById("saveHelpBtn").style.display = "none";
+    document.getElementById("editHelpBtn").textContent = "✏️ Edit Guide";
+    document.getElementById("helpModal").style.display = "flex";
+  }
+
+  function closeHelpModal() {
+    document.getElementById("helpModal").style.display = "none";
+  }
+
+  function toggleEditHelpMode() {
+    const viewArea = document.getElementById("helpViewArea");
+    const editArea = document.getElementById("helpEditArea");
+    const saveBtn = document.getElementById("saveHelpBtn");
+    const editBtn = document.getElementById("editHelpBtn");
+
+    if (editArea.style.display === "none") {
+      editArea.style.display = "block";
+      viewArea.style.display = "none";
+      saveBtn.style.display = "inline-block";
+      editBtn.textContent = "👁️ Preview Guide";
+    } else {
+      editArea.style.display = "none";
+      viewArea.style.display = "block";
+      viewArea.innerHTML = document.getElementById("helpTextarea").value;
+      saveBtn.style.display = "none";
+      editBtn.textContent = "✏️ Edit Guide";
+    }
+  }
+
+  function saveHelpGuideContent() {
+    pushUndoState();
+    defaultHelpGuide = document.getElementById("helpTextarea").value;
+    saveStateToLocalStorage();
+    openHelpModal();
+    alert("Help guide updated and saved!");
   }
 
   function saveStateToLocalStorage() {
