@@ -49,9 +49,9 @@
 
     .modal-box {
       background: var(--card-bg); border: 1px solid #334155;
-      padding: 2rem; border-radius: 12px; width: 90%; max-width: 520px;
+      padding: 2rem; border-radius: 12px; width: 90%; max-width: 550px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center;
-      max-height: 85vh; display: flex; flex-direction: column;
+      max-height: 85vh; display: flex; flex-direction: column; overflow-y: auto;
     }
 
     .modal-box h2 { margin-top: 0; font-size: 1.4rem; color: var(--text); }
@@ -85,13 +85,26 @@
     /* Calendar Grid Modal */
     .calendar-header {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem;
+      margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem; flex-wrap: wrap; gap: 0.5rem;
     }
 
     .calendar-grid {
       display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
       margin-bottom: 1rem; text-align: center; font-size: 0.85rem;
     }
+
+    .year-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-bottom: 1rem; text-align: center;
+    }
+
+    .year-month-card {
+      background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      padding: 0.8rem 0.5rem; cursor: pointer; transition: all 0.15s ease;
+    }
+
+    .year-month-card:hover { border-color: var(--accent); background: #1e293b; }
+    .year-month-card.has-releases { border-color: var(--gold-accent); background: rgba(245, 158, 11, 0.12); }
 
     .cal-day-name { font-weight: bold; color: var(--text-muted); padding: 4px 0; }
     .cal-cell {
@@ -159,7 +172,7 @@
       background: #0f172a; color: var(--text);
       border: 1px solid #475569; padding: 0.6rem 0.8rem;
       border-radius: 8px; font-size: 0.88rem; font-weight: 600;
-      cursor: pointer; min-width: 200px;
+      cursor: pointer; min-width: 220px;
     }
 
     .btn {
@@ -200,7 +213,7 @@
     /* Energy Legend */
     .energy-legend {
       background: var(--card-bg); padding: 0.75rem 1rem;
-      border-radius: 12px; border: 1px solid #334155; margin-bottom: 1rem;
+      border-radius: 12px; border: 1px solid #334155; margin-top: 0.8rem; margin-bottom: 1rem;
       display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
     }
 
@@ -248,15 +261,22 @@
       margin-bottom: 0.75rem;
       display: flex; align-items: center; gap: 0.85rem;
       cursor: grab; user-select: none; position: relative;
-      transition: transform 0.2s ease, opacity 0.2s ease, border-color 0.15s ease, background-color 0.15s ease;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, border-color 0.15s ease, background-color 0.15s ease;
     }
 
-    /* Sub-second Trashing Animation */
+    /* Animated Trashing & Restoration */
     .song-card.trashing, .container-card.trashing {
-      transform: translateX(80px);
-      opacity: 0;
-      background: #7f1d1d !important;
-      border-color: #ef4444 !important;
+      transform: translateX(80px); opacity: 0; background: #7f1d1d !important; border-color: #ef4444 !important;
+    }
+
+    .song-card.untrashing, .container-card.untrashing {
+      animation: reverseTrash 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes reverseTrash {
+      0% { transform: translateX(80px); opacity: 0; background: #7f1d1d; }
+      50% { background: rgba(239, 68, 68, 0.4); }
+      100% { transform: translateX(0); opacity: 1; }
     }
 
     .song-card.drop-before::before, .container-card.drop-before::before {
@@ -286,9 +306,15 @@
     .song-title:hover { text-decoration: underline; }
     .song-notes { font-size: 0.82rem; color: var(--text-muted); }
 
+    /* Custom White Calendar Icon for Date Input */
     .date-picker-input {
       background: #0f172a; color: var(--text); border: 1px solid #475569;
       border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; cursor: pointer;
+    }
+
+    .date-picker-input::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(1.5);
+      cursor: pointer;
     }
 
     .edit-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; padding: 2px 4px; }
@@ -332,20 +358,18 @@
     .nested-song-card {
       background: #1e293b; border-radius: 6px; padding: 0.6rem 0.8rem;
       display: flex; align-items: center; gap: 0.6rem; border: 1px solid #334155; cursor: grab;
-      transition: transform 0.2s ease, opacity 0.2s ease;
+      transition: transform 0.25s ease, opacity 0.25s ease;
     }
 
-    .nested-song-card.trashing {
-      transform: translateX(80px); opacity: 0; background: #7f1d1d !important;
-    }
+    .nested-song-card.trashing { transform: translateX(80px); opacity: 0; background: #7f1d1d !important; }
 
-    /* Fast Toast Notification Banner */
+    /* Extended Toast Notification Banner */
     .trash-toast {
       position: fixed; bottom: 20px; right: 20px;
-      background: #ef4444; color: #fff; padding: 0.6rem 1rem;
-      border-radius: 8px; font-weight: 600; font-size: 0.85rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 2000;
-      opacity: 0; transform: translateY(10px); transition: all 0.2s ease;
+      background: #ef4444; color: #fff; padding: 0.7rem 1.2rem;
+      border-radius: 8px; font-weight: 600; font-size: 0.88rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 2000;
+      opacity: 0; transform: translateY(10px); transition: all 0.25s ease;
       pointer-events: none;
     }
     .trash-toast.show { opacity: 1; transform: translateY(0); }
@@ -357,20 +381,25 @@
 <div class="trash-toast" id="trashToast">🗑️ Item trashed & returned to All Songs library</div>
 
 <!-- Profile Selection Overlay Modal -->
-<div class="modal-overlay" id="userModal" style="display:none;">
+<div class="modal-overlay" id="userModal" style="display:none;" onclick="handleModalBackdropClick(event, 'userModal')">
   <div class="modal-box">
     <h2>Hi! Select your name from the list or create a new one!</h2>
-    <select class="modal-select" id="modalUserSelect">
+    <select class="modal-select" id="modalUserSelect" onchange="toggleProfileDeleteBtn()">
       <option value="">-- Select Existing Sub-Group --</option>
     </select>
-    <div style="margin: 0.5rem 0 1rem 0; color: var(--text-muted); font-size: 0.85rem;">— OR —</div>
+    
+    <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+      <button class="btn btn-danger btn-sm" id="deleteProfileBtn" style="display:none; width:100%;" onclick="deleteSelectedProfile()">🗑️ Delete Selected Profile</button>
+    </div>
+
+    <div style="margin: 0.2rem 0 1rem 0; color: var(--text-muted); font-size: 0.85rem;">— OR —</div>
     <input type="text" class="modal-input" id="modalUserNewInput" placeholder="Enter New Name (e.g., Sarah)">
     <button class="btn btn-primary" style="width: 100%; padding: 0.75rem; background: var(--accent);" onclick="handleModalSubmit()">Continue to Tracklist</button>
   </div>
 </div>
 
 <!-- "All Songs" Catalog Popup Drawer -->
-<div class="modal-overlay" id="allSongsModal" style="display:none;">
+<div class="modal-overlay" id="allSongsModal" style="display:none;" onclick="handleModalBackdropClick(event, 'allSongsModal')">
   <div class="modal-box">
     <h2>🎵 All Songs Library</h2>
     <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.5rem;">Select songs to add into the current active order:</p>
@@ -394,21 +423,27 @@
 </div>
 
 <!-- Release Calendar Modal -->
-<div class="modal-overlay" id="calendarModal" style="display:none;">
-  <div class="modal-box" style="max-width:600px;">
+<div class="modal-overlay" id="calendarModal" style="display:none;" onclick="handleModalBackdropClick(event, 'calendarModal')">
+  <div class="modal-box" style="max-width:620px;">
     <h2>📅 Track Release Calendar</h2>
     <div class="calendar-header">
-      <button class="btn btn-sm" onclick="changeCalMonth(-1)">◀ Prev</button>
-      <span id="calMonthYearTitle">Month Year</span>
-      <button class="btn btn-sm" onclick="changeCalMonth(1)">Next ▶</button>
+      <div style="display:flex; gap:0.4rem; align-items:center;">
+        <button class="btn btn-sm" id="calPrevBtn" onclick="changeCalMonth(-1)">◀ Prev</button>
+        <span id="calMonthYearTitle" style="min-width:140px; text-align:center;">Month Year</span>
+        <button class="btn btn-sm" id="calNextBtn" onclick="changeCalMonth(1)">Next ▶</button>
+      </div>
+      <div style="display:flex; gap:0.4rem;">
+        <button class="btn btn-sm btn-primary" id="calViewToggleBtn" onclick="toggleCalendarView()">📅 12-Month View</button>
+        <button class="btn btn-sm btn-success" onclick="exportToiCal()">📥 Export to iCal (.ics)</button>
+      </div>
     </div>
     
-    <div class="calendar-grid" id="calendarGrid">
-      <!-- Rendered dynamically -->
+    <div id="calendarDisplayArea">
+      <!-- Rendered dynamically (Grid or 12-Month Year View) -->
     </div>
 
-    <div id="calSelectedDayDetails" style="text-align:left; font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; min-height:40px; background:#0f172a; padding:0.6rem; border-radius:6px; border:1px solid #334155;">
-      Click a date to inspect scheduled releases...
+    <div id="calSelectedDayDetails" style="text-align:left; font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; min-height:42px; background:#0f172a; padding:0.6rem; border-radius:6px; border:1px solid #334155;">
+      Click a date or month to inspect scheduled releases...
     </div>
 
     <button class="btn" onclick="closeCalendarModal()">Close Calendar</button>
@@ -423,41 +458,30 @@
 
   <!-- Controls Bar -->
   <div class="controls-bar">
-    <!-- Row 1: List Navigation & Catalog Controls -->
+    <!-- Row 1: List Navigation Selector & Global Controls -->
     <div class="controls-row-1">
-      <span style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Browse Lists:</span>
       <select class="dropdown-selector" id="listSelector" onchange="handleDropdownSelect(this.value)"></select>
-      <button class="btn" onclick="openUserModal()">👤 Switch Profile</button>
-      <button class="btn btn-primary" onclick="openAllSongsModal()">🎵 All Songs Catalog</button>
-      <button class="btn btn-success" onclick="addNewSong()">➕ Add Song</button>
-      <button class="btn" style="background:#4f46e5;" onclick="openCalendarModal()">📅 Release Calendar</button>
-    </div>
-
-    <!-- Row 2: Secondary Project Actions -->
-    <div class="controls-row-2">
-      <button class="btn" onclick="startFreshList()">✨ Start Fresh</button>
       <button class="btn" onclick="saveNewList()">📋 Duplicate List</button>
+      <button class="btn" onclick="startFreshList()">✨ New List</button>
       <button class="btn" onclick="exportOrder()">📋 Copy Tracklist to Clipboard</button>
-      <button class="btn" onclick="exportProjectFile()">📥 Export File</button>
-      <button class="btn" onclick="triggerImportFile()">📤 Load File</button>
+      <button class="btn" onclick="exportProjectFile()">📥 Export</button>
+      <button class="btn" onclick="triggerImportFile()">📤 Load</button>
       <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="importProjectFile(event)">
       <button class="btn btn-undo" id="undoBtn" onclick="undoLastAction()" disabled title="Undo last change">↩️ Undo</button>
     </div>
 
+    <!-- Row 2: Dedicated Profile & Songs Workspace Controls -->
+    <div class="controls-row-2" style="background: #0f172a; padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid #334155;">
+      <button class="btn" onclick="openUserModal()">👤 Switch Profile</button>
+      <button class="btn btn-primary" onclick="openAllSongsModal()">🎵 All Songs Catalog</button>
+      <button class="btn btn-success" onclick="addNewSong()">➕ Add Song</button>
+      <button class="btn" style="background:#4f46e5; margin-left:auto;" onclick="openCalendarModal()">📅 Release Calendar</button>
+    </div>
+
     <!-- Favorite Orders Section -->
-    <div style="margin-top: 0.5rem;">
+    <div style="margin-top: 0.2rem;">
       <div class="section-label">⭐ Favorite Orders</div>
       <div class="preset-group" id="favoriteButtonsBar"></div>
-    </div>
-  </div>
-
-  <!-- Energy Legend -->
-  <div class="energy-legend">
-    <span class="legend-title">Drag an Energy Tag onto any song:</span>
-    <div class="tag-container">
-      <div class="drag-tag badge-low" draggable="true" ondragstart="handleEnergyDragStart(event, 'Low')">🟢 Low</div>
-      <div class="drag-tag badge-mid" draggable="true" ondragstart="handleEnergyDragStart(event, 'Mid')">🟡 Mid</div>
-      <div class="drag-tag badge-high" draggable="true" ondragstart="handleEnergyDragStart(event, 'High')">🔴 High</div>
     </div>
   </div>
 
@@ -475,7 +499,7 @@
     <!-- Multi-Select & Global Color Batch Bar -->
     <div class="batch-tools">
       <label><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"> Select All Tracks</label>
-      <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click supported)</span>
+      <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click for range | Option+Click clears all)</span>
       <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
         <span>🎨 Batch Color Dial:</span>
         <input type="color" class="color-picker" id="globalColorPicker" value="#6366f1" onchange="applyGlobalColor(this.value)" title="Change color of all checked songs">
@@ -488,6 +512,16 @@
       <div style="display:flex; gap:0.5rem;">
         <button class="btn btn-sm" onclick="copySelectedSongs()">📄 Copy Selected Songs</button>
         <button class="btn btn-sm btn-success" id="pasteBtn" onclick="pasteCopiedSongs()" disabled>📋 Paste Songs Here (<span id="copiedCountDisplay">0</span>)</button>
+      </div>
+    </div>
+
+    <!-- Energy Legend (Moved directly under Clipboard Tools) -->
+    <div class="energy-legend">
+      <span class="legend-title">Drag an Energy Tag onto any song:</span>
+      <div class="tag-container">
+        <div class="drag-tag badge-low" draggable="true" ondragstart="handleEnergyDragStart(event, 'Low')">🟢 Low</div>
+        <div class="drag-tag badge-mid" draggable="true" ondragstart="handleEnergyDragStart(event, 'Mid')">🟡 Mid</div>
+        <div class="drag-tag badge-high" draggable="true" ondragstart="handleEnergyDragStart(event, 'High')">🔴 High</div>
       </div>
     </div>
   </div>
@@ -587,13 +621,14 @@
   let lastCheckedCatalogBox = null;
 
   let calCurrentDate = new Date();
+  let calendarViewMode = "month"; // "month" or "year"
 
   let draggedItemData = null;
   let draggedEnergyValue = null;
   let draggedButtonKey = null;
 
   function loadStateFromLocalStorage() {
-    let saved = localStorage.getItem("song_builder_master_v7");
+    let saved = localStorage.getItem("song_builder_master_v8");
     if (saved) {
       try {
         let parsed = JSON.parse(saved);
@@ -605,7 +640,7 @@
   }
 
   function saveStateToLocalStorage() {
-    localStorage.setItem("song_builder_master_v7", JSON.stringify(masterDatabase));
+    localStorage.setItem("song_builder_master_v8", JSON.stringify(masterDatabase));
   }
 
   function getActiveGroupData() {
@@ -623,17 +658,34 @@
     document.getElementById("undoBtn").disabled = false;
   }
 
+  /* Extended Toast Banner (3.5s duration) & Reverse Undo Animation */
+  function triggerTrashToast(message = "🗑️ Item trashed & returned to All Songs library") {
+    const toast = document.getElementById("trashToast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 3500);
+  }
+
   function undoLastAction() {
     if (undoHistory.length === 0) return;
     masterDatabase = undoHistory.pop();
     if (undoHistory.length === 0) document.getElementById("undoBtn").disabled = true;
+
     renderList();
+
+    // Trigger reverse visual restoration effect
+    document.querySelectorAll(".song-card, .container-card").forEach(card => {
+      card.classList.add("untrashing");
+      setTimeout(() => card.classList.remove("untrashing"), 400);
+    });
+
+    triggerTrashToast("↩️ Trashed item(s) restored!");
   }
 
-  function triggerTrashToast() {
-    const toast = document.getElementById("trashToast");
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 1500);
+  function handleModalBackdropClick(e, modalId) {
+    if (e.target.id === modalId) {
+      document.getElementById(modalId).style.display = "none";
+    }
   }
 
   function renderList() {
@@ -755,8 +807,16 @@
     }
   }
 
-  /* Shift + Click Handler for Main List Checkboxes */
+  /* Shift + Click Range Selection AND Option/Alt + Click Clear All */
   function handleMainCheckboxClick(e, songId) {
+    // Option/Alt + Click clears ALL checkboxes
+    if (e.altKey) {
+      e.preventDefault();
+      toggleSelectAll(false);
+      document.getElementById("selectAllCheckbox").checked = false;
+      return;
+    }
+
     let song = findSongById(getCurrentSongs(), songId);
     if (!song) return;
 
@@ -965,7 +1025,7 @@
     renderList();
   }
 
-  /* Release Calendar Modal Engine */
+  /* Release Calendar Modal Engine with 12-Month Year View & iCal Export */
   function openCalendarModal() {
     renderCalendarView();
     document.getElementById("calendarModal").style.display = "flex";
@@ -975,21 +1035,31 @@
     document.getElementById("calendarModal").style.display = "none";
   }
 
+  function toggleCalendarView() {
+    calendarViewMode = calendarViewMode === "month" ? "year" : "month";
+    document.getElementById("calViewToggleBtn").textContent = calendarViewMode === "month" ? "📅 12-Month View" : "📆 Month Grid View";
+    renderCalendarView();
+  }
+
   function changeCalMonth(delta) {
-    calCurrentDate.setMonth(calCurrentDate.getMonth() + delta);
+    if (calendarViewMode === "month") {
+      calCurrentDate.setMonth(calCurrentDate.getMonth() + delta);
+    } else {
+      calCurrentDate.setFullYear(calCurrentDate.getFullYear() + delta);
+    }
     renderCalendarView();
   }
 
   function renderCalendarView() {
     const year = calCurrentDate.getFullYear();
     const month = calCurrentDate.getMonth();
-
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    document.getElementById("calMonthYearTitle").textContent = `${monthNames[month]} ${year}`;
 
-    // Collect all release dates in active list
-    const releaseMap = {};
+    const displayArea = document.getElementById("calendarDisplayArea");
+    displayArea.innerHTML = "";
+
     const songs = getCurrentSongs();
+    const releaseMap = {};
 
     songs.forEach(item => {
       if (item.type === "container" && item.releaseDate) {
@@ -1001,55 +1071,138 @@
       }
     });
 
-    const grid = document.getElementById("calendarGrid");
-    grid.innerHTML = "";
+    if (calendarViewMode === "month") {
+      document.getElementById("calMonthYearTitle").textContent = `${monthNames[month]} ${year}`;
+      document.getElementById("calPrevBtn").style.display = "inline-block";
+      document.getElementById("calNextBtn").style.display = "inline-block";
 
-    // Day names row
-    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(d => {
-      let div = document.createElement("div");
-      div.className = "cal-day-name";
-      div.textContent = d;
-      grid.appendChild(div);
+      let grid = document.createElement("div");
+      grid.className = "calendar-grid";
+
+      ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(d => {
+        let div = document.createElement("div");
+        div.className = "cal-day-name";
+        div.textContent = d;
+        grid.appendChild(div);
+      });
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        let cell = document.createElement("div");
+        cell.className = "cal-cell empty";
+        grid.appendChild(cell);
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        let cell = document.createElement("div");
+        cell.className = "cal-cell";
+
+        let monthStr = String(month + 1).padStart(2, '0');
+        let dayStr = String(day).padStart(2, '0');
+        let dateKey = `${year}-${monthStr}-${dayStr}`;
+
+        let hasReleases = releaseMap[dateKey];
+        if (hasReleases) cell.classList.add("has-release");
+
+        cell.innerHTML = `
+          <span class="cal-day-num">${day}</span>
+          ${hasReleases ? `<span class="cal-badge">${hasReleases.length} Track${hasReleases.length > 1 ? 's' : ''}</span>` : ''}
+        `;
+
+        cell.onclick = () => {
+          const details = document.getElementById("calSelectedDayDetails");
+          if (hasReleases) {
+            details.innerHTML = `<strong>Scheduled for ${dateKey}:</strong><br>• ` + hasReleases.join("<br>• ");
+          } else {
+            details.innerHTML = `<em>No releases scheduled for ${dateKey}</em>`;
+          }
+        };
+
+        grid.appendChild(cell);
+      }
+      displayArea.appendChild(grid);
+
+    } else {
+      // 12-Month Year View
+      document.getElementById("calMonthYearTitle").textContent = `Year ${year}`;
+      document.getElementById("calPrevBtn").style.display = "inline-block";
+      document.getElementById("calNextBtn").style.display = "inline-block";
+
+      let yearGrid = document.createElement("div");
+      yearGrid.className = "year-grid";
+
+      for (let m = 0; m < 12; m++) {
+        let monthStr = String(m + 1).padStart(2, '0');
+        let monthReleases = [];
+
+        Object.keys(releaseMap).forEach(dKey => {
+          if (dKey.startsWith(`${year}-${monthStr}`)) {
+            monthReleases.push(...releaseMap[dKey]);
+          }
+        });
+
+        let card = document.createElement("div");
+        card.className = `year-month-card ${monthReleases.length > 0 ? 'has-releases' : ''}`;
+        card.innerHTML = `
+          <div style="font-weight:bold; font-size:0.95rem; margin-bottom:4px;">${monthNames[m]}</div>
+          <div style="font-size:0.75rem; color:${monthReleases.length > 0 ? 'var(--gold-accent)' : 'var(--text-muted)'}; font-weight:700;">
+            ${monthReleases.length > 0 ? `🚀 ${monthReleases.length} Track(s)` : 'No Releases'}
+          </div>
+        `;
+
+        card.onclick = () => {
+          calCurrentDate.setMonth(m);
+          calendarViewMode = "month";
+          document.getElementById("calViewToggleBtn").textContent = "📅 12-Month View";
+          renderCalendarView();
+        };
+
+        yearGrid.appendChild(card);
+      }
+      displayArea.appendChild(yearGrid);
+    }
+  }
+
+  /* Export Scheduled Releases to standard iCal .ics format */
+  function exportToiCal() {
+    const songs = getCurrentSongs();
+    let events = [];
+
+    songs.forEach(item => {
+      let dateVal = item.releaseDate;
+      if (dateVal) {
+        let title = item.type === "container" ? `[Option Group] ${item.title}` : item.title;
+        let cleanDate = dateVal.replace(/-/g, '');
+        events.push(
+`BEGIN:VEVENT
+SUMMARY:Music Release: ${title}
+DTSTART;VALUE=DATE:${cleanDate}
+DTEND;VALUE=DATE:${cleanDate}
+DESCRIPTION:Scheduled release for ${title} via Interactive Sequence Builder.
+END:VEVENT`
+        );
+      }
     });
 
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-
-    // Empty lead cells
-    for (let i = 0; i < firstDayIndex; i++) {
-      let cell = document.createElement("div");
-      cell.className = "cal-cell empty";
-      grid.appendChild(cell);
+    if (events.length === 0) {
+      alert("No songs or option groups have assigned release dates to export!");
+      return;
     }
 
-    // Days cells
-    for (let day = 1; day <= totalDays; day++) {
-      let cell = document.createElement("div");
-      cell.className = "cal-cell";
+    let icsContent = 
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Interactive Song Sequence Builder//Release Calendar//EN
+${events.join("\n")}
+END:VCALENDAR`;
 
-      let monthStr = String(month + 1).padStart(2, '0');
-      let dayStr = String(day).padStart(2, '0');
-      let dateKey = `${year}-${monthStr}-${dayStr}`;
-
-      let hasReleases = releaseMap[dateKey];
-      if (hasReleases) cell.classList.add("has-release");
-
-      cell.innerHTML = `
-        <span class="cal-day-num">${day}</span>
-        ${hasReleases ? `<span class="cal-badge">${hasReleases.length} Track${hasReleases.length > 1 ? 's' : ''}</span>` : ''}
-      `;
-
-      cell.onclick = () => {
-        const details = document.getElementById("calSelectedDayDetails");
-        if (hasReleases) {
-          details.innerHTML = `<strong>Scheduled for ${dateKey}:</strong><br>• ` + hasReleases.join("<br>• ");
-        } else {
-          details.innerHTML = `<em>No releases scheduled for ${dateKey}</em>`;
-        }
-      };
-
-      grid.appendChild(cell);
-    }
+    let blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    let anchor = document.createElement("a");
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = `${getActiveGroupData().listsDatabase[getActiveGroupData().currentKey].listName}_Releases.ics`;
+    anchor.click();
   }
 
   /* Copy & Paste Selected Songs Logic */
@@ -1343,9 +1496,8 @@
       if (el) targetsToAnimate.push(el);
     }
 
-    // Trigger visual slide & fade (200ms)
     targetsToAnimate.forEach(el => el.classList.add("trashing"));
-    triggerTrashToast();
+    triggerTrashToast("🗑️ Item trashed & returned to All Songs library");
 
     setTimeout(() => {
       pushUndoState();
@@ -1378,7 +1530,7 @@
     }, 200);
   }
 
-  /* User Sub-Group Modal Logic with New Profile Template Setup */
+  /* User Sub-Group Modal & Delete Profile Logic */
   function openUserModal() {
     const modalSelect = document.getElementById("modalUserSelect");
     modalSelect.innerHTML = '<option value="">-- Select Existing Sub-Group --</option>';
@@ -1392,7 +1544,34 @@
     });
 
     document.getElementById("modalUserNewInput").value = "";
+    toggleProfileDeleteBtn();
     document.getElementById("userModal").style.display = "flex";
+  }
+
+  function toggleProfileDeleteBtn() {
+    const selectVal = document.getElementById("modalUserSelect").value;
+    const delBtn = document.getElementById("deleteProfileBtn");
+    if (selectVal && Object.keys(masterDatabase.groups).length > 1) {
+      delBtn.style.display = "block";
+    } else {
+      delBtn.style.display = "none";
+    }
+  }
+
+  function deleteSelectedProfile() {
+    const selectVal = document.getElementById("modalUserSelect").value;
+    if (!selectVal) return;
+
+    if (confirm(`Are you sure you want to PERMANENTLY delete the entire profile "${selectVal}" and all its lists?`)) {
+      pushUndoState();
+      delete masterDatabase.groups[selectVal];
+
+      let remainingGroups = Object.keys(masterDatabase.groups);
+      masterDatabase.activeGroup = remainingGroups[0];
+      
+      openUserModal();
+      renderList();
+    }
   }
 
   function handleModalSubmit() {
@@ -1599,7 +1778,7 @@
   }
 
   function startFreshList() {
-    let name = prompt("Name Your List:");
+    let name = prompt("Name Your New List:");
     if (name && name.trim()) {
       pushUndoState();
       let group = getActiveGroupData();
