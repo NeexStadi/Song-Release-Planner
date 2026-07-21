@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Song Sequence & Tracklist Builder</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-hover: #334155;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --high-energy: #ef4444;
+      --mid-energy: #f59e0b;
+      --low-energy: #10b981;
+      --container-bg: #162032;
+      --drop-line-color: #ef4444;
+      --gold-accent: #f59e0b;
+      --gold-hover: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container { width: 100%; max-width: 950px; }
+
+    header { margin-bottom: 1.5rem; text-align: center; }
+    h1 { margin: 0 0 0.5rem 0; font-size: 1.8rem; }
+    p { color: var(--text-muted); margin: 0; }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.9); display: flex;
+      align-items: center; justify-content: center; z-index: 1000;
+    }
+
+    .modal-box {
+      background: var(--card-bg); border: 1px solid #334155;
+      padding: 2rem; border-radius: 12px; width: 90%; max-width: 520px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center;
+      max-height: 85vh; display: flex; flex-direction: column;
+    }
+
+    .modal-box h2 { margin-top: 0; font-size: 1.4rem; color: var(--text); }
+
+    .modal-select, .modal-input {
+      width: 100%; padding: 0.75rem; border-radius: 8px;
+      border: 1px solid #475569; background: #0f172a; color: var(--text);
+      font-size: 0.95rem; margin-bottom: 1rem;
+    }
+
+    /* All Songs Drawer Scroll */
+    .all-songs-controls {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.5rem; gap: 0.5rem;
+    }
+
+    .all-songs-scroll {
+      overflow-y: auto; text-align: left; margin: 0.5rem 0 1rem 0;
+      border: 1px solid #334155; border-radius: 8px; padding: 0.5rem;
+      background: #0f172a; max-height: 350px;
+    }
+
+    .all-songs-item {
+      display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #1e293b; font-size: 0.9rem; font-weight: 500;
+    }
+
+    .all-songs-item:last-child { border-bottom: none; }
+    .all-songs-item label { cursor: pointer; flex-grow: 1; user-select: none; }
+
+    /* Calendar Grid Modal */
+    .calendar-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem;
+    }
+
+    .calendar-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+      margin-bottom: 1rem; text-align: center; font-size: 0.85rem;
+    }
+
+    .cal-day-name { font-weight: bold; color: var(--text-muted); padding: 4px 0; }
+    .cal-cell {
+      background: #0f172a; border-radius: 6px; padding: 8px 2px;
+      min-height: 48px; border: 1px solid #1e293b; display: flex;
+      flex-direction: column; align-items: center; justify-content: flex-start;
+      cursor: pointer; position: relative; transition: background 0.15s;
+    }
+
+    .cal-cell:hover { background: #334155; }
+    .cal-cell.empty { background: transparent; border: none; cursor: default; }
+    .cal-cell.has-release { border-color: var(--gold-accent); background: rgba(245, 158, 11, 0.15); }
+
+    .cal-day-num { font-weight: 600; font-size: 0.8rem; margin-bottom: 2px; }
+    .cal-badge {
+      background: var(--gold-accent); color: #0f172a; font-size: 0.65rem;
+      font-weight: 800; border-radius: 4px; padding: 1px 4px; max-width: 90%;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* Controls Bar Header Rows */
+    .controls-bar {
+      display: flex; flex-direction: column; gap: 0.8rem;
+      background: var(--card-bg); padding: 1.25rem;
+      border-radius: 12px; margin-bottom: 1.5rem;
+      border: 1px solid #334155;
+    }
+
+    .controls-row-1, .controls-row-2 {
+      display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    }
+
+    .section-label {
+      font-size: 0.85rem; font-weight: 700; color: var(--gold-accent);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
+    }
+
+    .preset-group {
+      display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; min-height: 50px;
+    }
+
+    /* Gold Draggable Preset Buttons */
+    .btn-preset {
+      background: #1e293b; color: var(--text);
+      border: 1px solid var(--gold-accent); padding: 0.6rem 1rem;
+      border-radius: 10px; cursor: grab; text-align: left;
+      transition: all 0.2s ease; display: flex; flex-direction: column; min-width: 130px;
+      user-select: none;
+    }
+
+    .btn-preset:active { cursor: grabbing; }
+    .btn-preset:hover { background: rgba(245, 158, 11, 0.2); }
+    .btn-preset.active {
+      background: var(--gold-accent); color: #0f172a;
+      border-color: var(--gold-hover);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+    .btn-preset.active .preset-sub { color: #1e293b; }
+    .btn-preset.dragging { opacity: 0.3; }
+
+    .btn-preset .preset-main { font-size: 0.95rem; font-weight: 800; line-height: 1.2; }
+    .btn-preset .preset-sub { font-size: 0.75rem; color: #cbd5e1; opacity: 0.9; margin-top: 2px; }
+
+    .dropdown-selector {
+      background: #0f172a; color: var(--text);
+      border: 1px solid #475569; padding: 0.6rem 0.8rem;
+      border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; min-width: 200px;
+    }
+
+    .btn {
+      background: #334155; color: var(--text); border: none;
+      padding: 0.55rem 1rem; border-radius: 8px;
+      font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease;
+    }
+
+    .btn:hover { background: var(--accent); }
+    .btn-primary { background: var(--accent); }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-success { background: #10b981; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-undo { background: #d97706; }
+    .btn-undo:hover { background: #b45309; }
+    .btn-undo:disabled { opacity: 0.4; cursor: not-allowed; background: #334155; }
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.78rem; }
+
+    /* Multi-Select & Global Color Tool Bar */
+    .batch-tools {
+      display: flex; align-items: center; gap: 1rem;
+      background: #0f172a; padding: 0.6rem 1rem;
+      border-radius: 8px; border: 1px solid #334155; margin-top: 0.8rem;
+      font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
+    }
+
+    .batch-tools label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text); }
+
+    /* Copy / Paste Toolbar */
+    .clipboard-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
+      background: #162032; padding: 0.55rem 1rem; border-radius: 8px;
+      border: 1px solid #334155; margin-top: 0.5rem; font-size: 0.82rem; color: var(--text-muted);
+    }
+
+    /* Energy Legend */
+    .energy-legend {
+      background: var(--card-bg); padding: 0.75rem 1rem;
+      border-radius: 12px; border: 1px solid #334155; margin-bottom: 1rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+
+    .legend-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    .tag-container { display: flex; gap: 0.5rem; }
+
+    .drag-tag {
+      padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem;
+      font-weight: bold; cursor: grab; user-select: none;
+      text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .badge-high { background: rgba(239, 68, 68, 0.25); color: var(--high-energy); border: 1px solid var(--high-energy); }
+    .badge-mid { background: rgba(245, 158, 11, 0.25); color: var(--mid-energy); border: 1px solid var(--mid-energy); }
+    .badge-low { background: rgba(16, 185, 129, 0.25); color: var(--low-energy); border: 1px solid var(--low-energy); }
+
+    /* Active List Header */
+    .active-list-header {
+      display: flex; flex-direction: column; gap: 0.5rem;
+      margin: 1.2rem 0 0.8rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #334155;
+    }
+
+    .title-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+    .active-list-title { font-size: 1.35rem; font-weight: 700; color: var(--text); cursor: pointer; }
+    .active-list-title:hover { text-decoration: underline; }
+
+    .favorite-toggle-btn {
+      align-self: flex-start; background: #1e293b; border: 1px solid var(--gold-accent);
+      color: var(--gold-accent); padding: 0.4rem 0.8rem; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+
+    .favorite-toggle-btn:hover { background: rgba(245, 158, 11, 0.2); }
+    .favorite-toggle-btn.is-fav { background: var(--gold-accent); color: #0f172a; }
+
+    /* Tracklist Cards */
+    .song-list { list-style: none; padding: 0; margin: 0; position: relative; }
+
+    .song-card, .container-card {
+      background: var(--card-bg);
+      border: 1px solid #334155;
+      border-left: 6px solid #6366f1;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.75rem;
+      display: flex; align-items: center; gap: 0.85rem;
+      cursor: grab; user-select: none; position: relative;
+      transition: transform 0.2s ease, opacity 0.2s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    /* Sub-second Trashing Animation */
+    .song-card.trashing, .container-card.trashing {
+      transform: translateX(80px);
+      opacity: 0;
+      background: #7f1d1d !important;
+      border-color: #ef4444 !important;
+    }
+
+    .song-card.drop-before::before, .container-card.drop-before::before {
+      content: ''; position: absolute; top: -6px; left: 0; right: 0;
+      height: 4px; background-color: var(--drop-line-color);
+      border-radius: 2px; box-shadow: 0 0 8px var(--drop-line-color); z-index: 10;
+    }
+
+    .song-card.drop-after::after, .container-card.drop-after::after {
+      content: ''; position: absolute; bottom: -6px; left: 0; right: 0;
+      height: 4px; background-color: var(--drop-line-color);
+      border-radius: 2px; box-shadow: 0 0 8px var(--drop-line-color); z-index: 10;
+    }
+
+    .song-card.drop-merge-target, .container-card.drop-merge-target {
+      border: 2px dashed #6366f1 !important; background: #2a3852 !important;
+    }
+
+    .song-card.dragging, .container-card.dragging { opacity: 0.25; }
+
+    .drag-handle { color: var(--text-muted); font-size: 1.2rem; cursor: grab; }
+    .track-num { font-size: 1.1rem; font-weight: bold; color: var(--text-muted); min-width: 24px; }
+    .song-content { flex-grow: 1; }
+
+    .song-title-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap; }
+    .song-title { font-size: 1.05rem; font-weight: 600; cursor: pointer; }
+    .song-title:hover { text-decoration: underline; }
+    .song-notes { font-size: 0.82rem; color: var(--text-muted); }
+
+    .date-picker-input {
+      background: #0f172a; color: var(--text); border: 1px solid #475569;
+      border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; cursor: pointer;
+    }
+
+    .edit-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; padding: 2px 4px; }
+    .edit-btn:hover { color: var(--text); }
+
+    .card-actions { display: flex; align-items: center; gap: 0.6rem; }
+    .select-checkbox { width: 16px; height: 16px; cursor: pointer; }
+
+    .color-picker {
+      -webkit-appearance: none; border: none; width: 22px; height: 22px;
+      border-radius: 50%; cursor: pointer; background: transparent;
+    }
+    .color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+    .delete-btn { background: none; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; opacity: 0.6; }
+    .delete-btn:hover { opacity: 1; }
+
+    /* Group Container Card Styling */
+    .container-card {
+      background: var(--container-bg); border: 2px dashed #4f46e5;
+      border-left: 6px solid #818cf8; flex-direction: column;
+      align-items: stretch; gap: 0.75rem;
+    }
+
+    .container-header {
+      display: flex; align-items: center; gap: 0.75rem;
+      border-bottom: 1px solid #334155; padding-bottom: 0.5rem; flex-wrap: wrap;
+    }
+
+    .container-tag {
+      background: #4f46e5; color: #fff; font-size: 0.7rem;
+      font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase;
+    }
+
+    .nested-song-list {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+
+    .nested-song-card {
+      background: #1e293b; border-radius: 6px; padding: 0.6rem 0.8rem;
+      display: flex; align-items: center; gap: 0.6rem; border: 1px solid #334155; cursor: grab;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .nested-song-card.trashing {
+      transform: translateX(80px); opacity: 0; background: #7f1d1d !important;
+    }
+
+    /* Fast Toast Notification Banner */
+    .trash-toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: #ef4444; color: #fff; padding: 0.6rem 1rem;
+      border-radius: 8px; font-weight: 600; font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 2000;
+      opacity: 0; transform: translateY(10px); transition: all 0.2s ease;
+      pointer-events: none;
+    }
+    .trash-toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Toast Banner -->
+<div class="trash-toast" id="trashToast">🗑️ Item trashed & returned to All Songs library</div>
+
+<!-- Profile Selection Overlay Modal -->
+<div class="modal-overlay" id="userModal" style="display:none;">
+  <div class="modal-box">
+    <h2>Hi! Select your name from the list or create a new one!</h2>
+    <select class="modal-select" id="modalUserSelect">
+      <option value="">-- Select Existing Sub-Group --</option>
+    </select>
+    <div style="margin: 0.5rem 0 1rem 0; color: var(--text-muted); font-size: 0.85rem;">— OR —</div>
+    <input type="text" class="modal-input" id="modalUserNewInput" placeholder="Enter New Name (e.g., Sarah)">
+    <button class="btn btn-primary" style="width: 100%; padding: 0.75rem; background: var(--accent);" onclick="handleModalSubmit()">Continue to Tracklist</button>
+  </div>
+</div>
+
+<!-- "All Songs" Catalog Popup Drawer -->
+<div class="modal-overlay" id="allSongsModal" style="display:none;">
+  <div class="modal-box">
+    <h2>🎵 All Songs Library</h2>
+    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.5rem;">Select songs to add into the current active order:</p>
+
+    <div class="all-songs-controls">
+      <div style="display:flex; gap:0.4rem;">
+        <button class="btn btn-sm" onclick="setAllCatalogCheckboxes(true)">☑️ Check All</button>
+        <button class="btn btn-sm" onclick="setAllCatalogCheckboxes(false)">☐ Uncheck All</button>
+      </div>
+      <span style="font-size:0.75rem; color:var(--text-muted);">💡 Tip: Hold Shift + Click to select range</span>
+    </div>
+
+    <div class="all-songs-scroll" id="allSongsContainer">
+      <!-- Renders dynamically -->
+    </div>
+    <div style="display:flex; gap:0.5rem;">
+      <button class="btn btn-success" style="flex:1;" onclick="addSelectedFromCatalog()">➕ Add Selected to Order</button>
+      <button class="btn" onclick="closeAllSongsModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Release Calendar Modal -->
+<div class="modal-overlay" id="calendarModal" style="display:none;">
+  <div class="modal-box" style="max-width:600px;">
+    <h2>📅 Track Release Calendar</h2>
+    <div class="calendar-header">
+      <button class="btn btn-sm" onclick="changeCalMonth(-1)">◀ Prev</button>
+      <span id="calMonthYearTitle">Month Year</span>
+      <button class="btn btn-sm" onclick="changeCalMonth(1)">Next ▶</button>
+    </div>
+    
+    <div class="calendar-grid" id="calendarGrid">
+      <!-- Rendered dynamically -->
+    </div>
+
+    <div id="calSelectedDayDetails" style="text-align:left; font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; min-height:40px; background:#0f172a; padding:0.6rem; border-radius:6px; border:1px solid #334155;">
+      Click a date to inspect scheduled releases...
+    </div>
+
+    <button class="btn" onclick="closeCalendarModal()">Close Calendar</button>
+  </div>
+</div>
+
+<div class="container">
+  <header>
+    <h1>🎵 Interactive Song Sequence Builder</h1>
+    <p>Reorder tracks or top order buttons. Auto-saves locally to browser memory.</p>
+  </header>
+
+  <!-- Controls Bar -->
+  <div class="controls-bar">
+    <!-- Row 1: List Navigation & Catalog Controls -->
+    <div class="controls-row-1">
+      <span style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Browse Lists:</span>
+      <select class="dropdown-selector" id="listSelector" onchange="handleDropdownSelect(this.value)"></select>
+      <button class="btn" onclick="openUserModal()">👤 Switch Profile</button>
+      <button class="btn btn-primary" onclick="openAllSongsModal()">🎵 All Songs Catalog</button>
+      <button class="btn btn-success" onclick="addNewSong()">➕ Add Song</button>
+      <button class="btn" style="background:#4f46e5;" onclick="openCalendarModal()">📅 Release Calendar</button>
+    </div>
+
+    <!-- Row 2: Secondary Project Actions -->
+    <div class="controls-row-2">
+      <button class="btn" onclick="startFreshList()">✨ Start Fresh</button>
+      <button class="btn" onclick="saveNewList()">📋 Duplicate List</button>
+      <button class="btn" onclick="exportOrder()">📋 Copy Tracklist to Clipboard</button>
+      <button class="btn" onclick="exportProjectFile()">📥 Export File</button>
+      <button class="btn" onclick="triggerImportFile()">📤 Load File</button>
+      <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="importProjectFile(event)">
+      <button class="btn btn-undo" id="undoBtn" onclick="undoLastAction()" disabled title="Undo last change">↩️ Undo</button>
+    </div>
+
+    <!-- Favorite Orders Section -->
+    <div style="margin-top: 0.5rem;">
+      <div class="section-label">⭐ Favorite Orders</div>
+      <div class="preset-group" id="favoriteButtonsBar"></div>
+    </div>
+  </div>
+
+  <!-- Energy Legend -->
+  <div class="energy-legend">
+    <span class="legend-title">Drag an Energy Tag onto any song:</span>
+    <div class="tag-container">
+      <div class="drag-tag badge-low" draggable="true" ondragstart="handleEnergyDragStart(event, 'Low')">🟢 Low</div>
+      <div class="drag-tag badge-mid" draggable="true" ondragstart="handleEnergyDragStart(event, 'Mid')">🟡 Mid</div>
+      <div class="drag-tag badge-high" draggable="true" ondragstart="handleEnergyDragStart(event, 'High')">🔴 High</div>
+    </div>
+  </div>
+
+  <!-- Active List Header -->
+  <div class="active-list-header">
+    <div class="title-row">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span class="active-list-title" id="activeListDisplay" onclick="renameActiveList()">List Name</span>
+        <button class="edit-btn" onclick="renameActiveList()" title="Rename List">✏️</button>
+      </div>
+      <button class="btn btn-danger" id="deleteListBtn" onclick="deleteCurrentList()">🗑️ Delete List</button>
+    </div>
+    <button class="favorite-toggle-btn" id="favToggleBtn" onclick="toggleCurrentFavorite()">⭐ Create Favorite Button</button>
+
+    <!-- Multi-Select & Global Color Batch Bar -->
+    <div class="batch-tools">
+      <label><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"> Select All Tracks</label>
+      <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click supported)</span>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+        <span>🎨 Batch Color Dial:</span>
+        <input type="color" class="color-picker" id="globalColorPicker" value="#6366f1" onchange="applyGlobalColor(this.value)" title="Change color of all checked songs">
+      </div>
+    </div>
+
+    <!-- Copy / Paste Songs Row -->
+    <div class="clipboard-bar">
+      <span>Clipboard Tools:</span>
+      <div style="display:flex; gap:0.5rem;">
+        <button class="btn btn-sm" onclick="copySelectedSongs()">📄 Copy Selected Songs</button>
+        <button class="btn btn-sm btn-success" id="pasteBtn" onclick="pasteCopiedSongs()" disabled>📋 Paste Songs Here (<span id="copiedCountDisplay">0</span>)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Song Tracklist -->
+  <ul class="song-list" id="songList"></ul>
+</div>
+
+<script>
+  // Complete Master Vault
+  const fullSongMasterVault = [
+    "Altior", "Ardente", "The Beginning", "Blame It On The Vibe",
+    "Blankface", "Boyz II Men", "Closer To You", "Crazy Faith", "Curiosity",
+    "DDG", "Detour", "Down Low", "Easy", "Eternity",
+    "Fall Into Pieces On This Christmas Night", "Headlights", "Hearbeat", "Hot Boy", "I Love You Baby",
+    "I Promise", "Intention", "Losing", "Malibu", "Midas",
+    "Miss McRae", "No Comment", "Noise", "Obsessed", "One On One",
+    "Pressure", "Pull Up On Me", "Reception", "Reflection",
+    "Rendezvous", "Right Now", "Said N Done", "The Show",
+    "Show Stopper", "Signal", "Slowmotion", "Something I Want", "Soul",
+    "Soul Tied", "Spa Day", "Tension", "Throwed", "Unstoppable",
+    "V12", "You Knew First", "123"
+  ];
+
+  const initialExportData = {
+    "listsDatabase": {
+      "order1": {
+        "listName": "Nico_4 Song Release",
+        "isFav": true,
+        "songs": [
+          {
+            "id": "c_1784600274755", "type": "container", "title": "Midas / Losing Slot | EITHER OR", "releaseDate": "",
+            "songs": [
+              { "id": "s1", "title": "Midas", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Strong melodies, single worthy." },
+              { "id": "s12", "title": "Losing", "energy": "Low", "color": "#3b82f6", "releaseDate": "", "selected": false, "notes": "Slower, very strong lyric/melody" }
+            ]
+          },
+          {
+            "id": "c_1784600045928", "type": "container", "title": "Pressure / Pull Up On Me | DUAL RELEASE", "releaseDate": "",
+            "songs": [
+              { "id": "s2", "title": "Pressure", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
+              { "id": "s3", "title": "Pull Up On Me", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
+            ]
+          },
+          { "id": "s4", "title": "No Comment", "energy": "High", "color": "#ef4444", "releaseDate": "", "selected": false, "notes": "Feature - Exposure - High Energy" },
+          { "id": "s5", "title": "Christmas Song", "energy": "Mid", "color": "#10b981", "releaseDate": "", "selected": false, "notes": "Must be #4 if December release" },
+          { "id": "s6", "title": "Hot Boy", "energy": "High", "color": "#f59e0b", "releaseDate": "", "selected": false, "notes": "Top of the year potential" },
+          { "id": "s7", "title": "Slowmotion", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Fresh / new vibe" },
+          { "id": "s8", "title": "I Promise", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Cool Factor" },
+          { "id": "s9", "title": "V12", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
+          { "id": "s10", "title": "Rendezvous", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
+          { "id": "s11", "title": "Show Stopper", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
+        ]
+      },
+      "order2": {
+        "listName": "Nico_3 Song Release", "isFav": true,
+        "songs": [
+          {
+            "id": "c_1784600154430", "type": "container", "title": "Midas / Losing Slot", "releaseDate": "",
+            "songs": [
+              { "id": "s1", "title": "Midas", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Strong melodies, single worthy." },
+              { "id": "s12", "title": "Losing", "energy": "Low", "color": "#3b82f6", "releaseDate": "", "selected": false, "notes": "Slower, very strong lyric/melody" }
+            ]
+          },
+          {
+            "id": "c_1784600229600", "type": "container", "title": "No Comment / Slowmotion Slot", "releaseDate": "",
+            "songs": [
+              { "id": "s4", "title": "No Comment", "energy": "High", "color": "#ef4444", "releaseDate": "", "selected": false, "notes": "Feature - Exposure - High Energy" },
+              { "id": "s7", "title": "Slowmotion", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Fresh / new vibe" },
+              { "id": "s8", "title": "I Promise", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Cool Factor" },
+              { "id": "s11", "title": "Show Stopper", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
+            ]
+          },
+          { "id": "s2", "title": "Pressure", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
+          { "id": "s5", "title": "Christmas Song", "energy": "Mid", "color": "#10b981", "releaseDate": "", "selected": false, "notes": "Must be #4 if December release" },
+          { "id": "s6", "title": "Hot Boy", "energy": "High", "color": "#f59e0b", "releaseDate": "", "selected": false, "notes": "Top of the year potential" },
+          { "id": "s9", "title": "V12", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
+          { "id": "s10", "title": "Rendezvous", "energy": "High", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
+          { "id": "s3", "title": "Pull Up On Me", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" }
+        ]
+      }
+    },
+    "favoritesOrder": ["order1", "order2"],
+    "currentKey": "order1"
+  };
+
+  let masterDatabase = {
+    activeGroup: "Nico's Lists",
+    groups: {
+      "Nico's Lists": JSON.parse(JSON.stringify(initialExportData))
+    }
+  };
+
+  let undoHistory = [];
+  let copiedSongsBuffer = [];
+  let lastCheckedMainBox = null;
+  let lastCheckedCatalogBox = null;
+
+  let calCurrentDate = new Date();
+
+  let draggedItemData = null;
+  let draggedEnergyValue = null;
+  let draggedButtonKey = null;
+
+  function loadStateFromLocalStorage() {
+    let saved = localStorage.getItem("song_builder_master_v7");
+    if (saved) {
+      try {
+        let parsed = JSON.parse(saved);
+        if (parsed.groups) masterDatabase = parsed;
+      } catch (e) {
+        console.error("Error restoring local state", e);
+      }
+    }
+  }
+
+  function saveStateToLocalStorage() {
+    localStorage.setItem("song_builder_master_v7", JSON.stringify(masterDatabase));
+  }
+
+  function getActiveGroupData() {
+    return masterDatabase.groups[masterDatabase.activeGroup];
+  }
+
+  function getCurrentSongs() {
+    let group = getActiveGroupData();
+    return group.listsDatabase[group.currentKey].songs;
+  }
+
+  function pushUndoState() {
+    if (undoHistory.length >= 5) undoHistory.shift();
+    undoHistory.push(JSON.parse(JSON.stringify(masterDatabase)));
+    document.getElementById("undoBtn").disabled = false;
+  }
+
+  function undoLastAction() {
+    if (undoHistory.length === 0) return;
+    masterDatabase = undoHistory.pop();
+    if (undoHistory.length === 0) document.getElementById("undoBtn").disabled = true;
+    renderList();
+  }
+
+  function triggerTrashToast() {
+    const toast = document.getElementById("trashToast");
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 1500);
+  }
+
+  function renderList() {
+    saveStateToLocalStorage();
+
+    const listEl = document.getElementById("songList");
+    listEl.innerHTML = "";
+    const songs = getCurrentSongs();
+
+    songs.forEach((item, index) => {
+      if (item.type === "container") renderContainerCard(listEl, item, index);
+      else renderSingleSongCard(listEl, item, index);
+    });
+
+    renderControlsUI();
+    updateClipboardUI();
+  }
+
+  function renderSingleSongCard(containerEl, song, index) {
+    const card = document.createElement("li");
+    card.className = "song-card";
+    card.draggable = true;
+    card.dataset.id = song.id;
+    card.style.borderLeftColor = song.color || "#6366f1";
+
+    const badgeClass = song.energy === "High" ? "badge-high" : song.energy === "Low" ? "badge-low" : "badge-mid";
+
+    card.innerHTML = `
+      <span class="drag-handle">☰</span>
+      <span class="track-num">${index + 1}</span>
+      <div class="song-content">
+        <div class="song-title-row">
+          <span class="song-title" onclick="renameSong('${song.id}')">${song.title}</span>
+          <button class="edit-btn" onclick="renameSong('${song.id}')">✏️</button>
+          <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">📅 Release Date:</span>
+          <input type="date" class="date-picker-input" value="${song.releaseDate || ''}" onchange="updateReleaseDate('${song.id}', this.value)">
+        </div>
+        <div class="song-notes">
+          ${song.notes ? song.notes : "<em>No notes...</em>"}
+          <button class="edit-btn" onclick="editNotes('${song.id}')">✏️ Edit</button>
+        </div>
+      </div>
+      <div class="card-actions">
+        <span class="drag-tag ${badgeClass}">${song.energy}</span>
+        <input type="checkbox" class="select-checkbox main-list-chk" ${song.selected ? 'checked' : ''} onclick="handleMainCheckboxClick(event, '${song.id}')" title="Select for Batch Editing">
+        <input type="color" class="color-picker" value="${song.color || '#6366f1'}" onchange="changeColor('${song.id}', this.value)" title="Color Code">
+        <button class="delete-btn" onclick="deleteSong('${song.id}')" title="Delete">🗑️</button>
+      </div>
+    `;
+
+    addDragAndDropListeners(card, song.id, 'song');
+    containerEl.appendChild(card);
+  }
+
+  function renderContainerCard(containerEl, group, index) {
+    const card = document.createElement("li");
+    card.className = "container-card";
+    card.draggable = true;
+    card.dataset.id = group.id;
+
+    let subCardsHTML = group.songs.map((song) => {
+      const badgeClass = song.energy === "High" ? "badge-high" : song.energy === "Low" ? "badge-low" : "badge-mid";
+      return `
+        <div class="nested-song-card" data-subid="${song.id}" draggable="true">
+          <span class="drag-handle">☰</span>
+          <div class="song-content">
+            <div class="song-title-row">
+              <span class="song-title" onclick="renameSong('${song.id}')">${song.title}</span>
+              <button class="edit-btn" onclick="renameSong('${song.id}')">✏️</button>
+            </div>
+            <div class="song-notes">${song.notes ? song.notes : "<em>No notes...</em>"} <button class="edit-btn" onclick="editNotes('${song.id}')">✏️ Edit</button></div>
+          </div>
+          <span class="drag-tag ${badgeClass}">${song.energy}</span>
+          <input type="checkbox" class="select-checkbox main-list-chk" ${song.selected ? 'checked' : ''} onclick="handleMainCheckboxClick(event, '${song.id}')" title="Select for Batch Editing">
+          <button class="delete-btn" onclick="removeSongFromContainer('${group.id}', '${song.id}')" title="Remove from Group">❌</button>
+        </div>
+      `;
+    }).join("");
+
+    card.innerHTML = `
+      <div class="container-header">
+        <span class="drag-handle">☰</span>
+        <span class="track-num">${index + 1}</span>
+        <span class="container-tag">Option Group (${group.songs.length} Tracks)</span>
+        <span style="flex-grow:1; font-weight:600; cursor:pointer;" onclick="renameGroupTitle('${group.id}')">${group.title || "Option Slot"}</span>
+        <span style="font-size:0.75rem; color:var(--text-muted);">📅 Group Release:</span>
+        <input type="date" class="date-picker-input" value="${group.releaseDate || ''}" onchange="updateContainerReleaseDate('${group.id}', this.value)">
+        <button class="delete-btn" onclick="deleteContainerPrompt('${group.id}')" title="Delete Group">🗑️ Group</button>
+      </div>
+      <div class="nested-song-list">
+        ${subCardsHTML}
+      </div>
+    `;
+
+    card.querySelectorAll(".nested-song-card").forEach(nestedEl => {
+      const subId = nestedEl.dataset.subid;
+      nestedEl.addEventListener("dragstart", (e) => {
+        e.stopPropagation();
+        draggedItemData = { type: 'nested', itemId: subId, parentContainerId: group.id };
+        nestedEl.classList.add("dragging");
+      });
+      nestedEl.addEventListener("dragend", (e) => {
+        e.stopPropagation();
+        nestedEl.classList.remove("dragging");
+        clearDropIndicators();
+      });
+    });
+
+    addDragAndDropListeners(card, group.id, 'container');
+    containerEl.appendChild(card);
+  }
+
+  function updateContainerReleaseDate(containerId, dateVal) {
+    let container = getCurrentSongs().find(s => s.id === containerId);
+    if (container) {
+      pushUndoState();
+      container.releaseDate = dateVal;
+      saveStateToLocalStorage();
+    }
+  }
+
+  /* Shift + Click Handler for Main List Checkboxes */
+  function handleMainCheckboxClick(e, songId) {
+    let song = findSongById(getCurrentSongs(), songId);
+    if (!song) return;
+
+    const checkboxes = Array.from(document.querySelectorAll(".main-list-chk"));
+    const targetCheckbox = e.target;
+
+    if (e.shiftKey && lastCheckedMainBox) {
+      let start = checkboxes.indexOf(lastCheckedMainBox);
+      let end = checkboxes.indexOf(targetCheckbox);
+
+      if (start !== -1 && end !== -1) {
+        let range = checkboxes.slice(Math.min(start, end), Math.max(start, end) + 1);
+        let isChecked = targetCheckbox.checked;
+
+        range.forEach(cb => {
+          cb.checked = isChecked;
+          let parentCard = cb.closest(".song-card, .nested-song-card");
+          if (parentCard) {
+            let id = parentCard.dataset.id || parentCard.dataset.subid;
+            let s = findSongById(getCurrentSongs(), id);
+            if (s) s.selected = isChecked;
+          }
+        });
+      }
+    } else {
+      song.selected = targetCheckbox.checked;
+    }
+
+    lastCheckedMainBox = targetCheckbox;
+    saveStateToLocalStorage();
+  }
+
+  /* Universal Drag & Drop */
+  function addDragAndDropListeners(card, itemId, itemType) {
+    card.addEventListener("dragstart", (e) => {
+      if (!draggedEnergyValue) {
+        pushUndoState();
+        draggedItemData = { type: itemType, itemId: itemId };
+        card.classList.add("dragging");
+      }
+    });
+
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      draggedItemData = null;
+      draggedEnergyValue = null;
+      clearDropIndicators();
+    });
+
+    card.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      clearDropIndicators();
+
+      if (draggedEnergyValue) {
+        card.classList.add("drag-over-energy");
+        return;
+      }
+
+      if (!draggedItemData || draggedItemData.itemId === itemId) return;
+
+      const rect = card.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const height = rect.height;
+
+      if (offsetY < height * 0.25) card.classList.add("drop-before");
+      else if (offsetY > height * 0.75) card.classList.add("drop-after");
+      else card.classList.add("drop-merge-target");
+    });
+
+    card.addEventListener("dragleave", () => {
+      card.classList.remove("drop-before", "drop-after", "drop-merge-target", "drag-over-energy");
+    });
+
+    card.addEventListener("drop", (e) => {
+      e.preventDefault();
+
+      if (draggedEnergyValue) {
+        applyEnergyTagToItem(itemId, draggedEnergyValue);
+        clearDropIndicators();
+        return;
+      }
+
+      if (!draggedItemData || draggedItemData.itemId === itemId) return;
+
+      const isBefore = card.classList.contains("drop-before");
+      const isAfter = card.classList.contains("drop-after");
+      const isMerge = card.classList.contains("drop-merge-target");
+
+      clearDropIndicators();
+
+      if (isMerge) executeMerge(draggedItemData, itemId);
+      else if (isBefore || isAfter) executeReorder(draggedItemData, itemId, isBefore ? "before" : "after");
+    });
+  }
+
+  function clearDropIndicators() {
+    document.querySelectorAll(".song-card, .container-card").forEach(c => {
+      c.classList.remove("drop-before", "drop-after", "drop-merge-target", "drag-over-energy");
+    });
+  }
+
+  function handleEnergyDragStart(e, level) { draggedEnergyValue = level; }
+
+  function applyEnergyTagToItem(itemId, level) {
+    let song = findSongById(getCurrentSongs(), itemId);
+    if (song) { pushUndoState(); song.energy = level; renderList(); }
+  }
+
+  function findSongById(songs, id) {
+    for (let s of songs) {
+      if (s.id === id) return s;
+      if (s.type === "container") {
+        let nested = s.songs.find(ns => ns.id === id);
+        if (nested) return nested;
+      }
+    }
+    return null;
+  }
+
+  function extractDraggedItem(draggedData) {
+    let songs = getCurrentSongs();
+    let extractedSong = null;
+
+    if (draggedData.type === 'song' || draggedData.type === 'container') {
+      let index = songs.findIndex(s => s.id === draggedData.itemId);
+      if (index !== -1) extractedSong = songs.splice(index, 1)[0];
+    } else if (draggedData.type === 'nested') {
+      let container = songs.find(s => s.id === draggedData.parentContainerId);
+      if (container) {
+        let nIndex = container.songs.findIndex(s => s.id === draggedData.itemId);
+        if (nIndex !== -1) extractedSong = container.songs.splice(nIndex, 1)[0];
+      }
+    }
+    return extractedSong;
+  }
+
+  function executeReorder(draggedData, targetId, position) {
+    let songs = getCurrentSongs();
+    let extracted = extractDraggedItem(draggedData);
+    if (!extracted) return;
+
+    let targetIndex = songs.findIndex(s => s.id === targetId);
+    if (targetIndex !== -1) {
+      if (position === "after") targetIndex += 1;
+      songs.splice(targetIndex, 0, extracted);
+    } else {
+      songs.push(extracted);
+    }
+    renderList();
+  }
+
+  function executeMerge(draggedData, targetId) {
+    let songs = getCurrentSongs();
+    let targetItem = songs.find(s => s.id === targetId);
+    let extracted = extractDraggedItem(draggedData);
+
+    if (!targetItem || !extracted) return;
+
+    let mergedSongs = [];
+    if (targetItem.type === "container") {
+      mergedSongs.push(...targetItem.songs);
+    } else {
+      mergedSongs.push(targetItem);
+    }
+
+    if (extracted.type === "container") {
+      mergedSongs.push(...extracted.songs);
+    } else {
+      mergedSongs.push(extracted);
+    }
+
+    let existingDates = mergedSongs.map(s => s.releaseDate).filter(d => d && d.trim() !== "");
+    let uniqueDates = Array.from(new Set(existingDates));
+    let resolvedGroupDate = "";
+
+    if (uniqueDates.length === 1) {
+      resolvedGroupDate = uniqueDates[0];
+    } else if (uniqueDates.length > 1) {
+      let promptMsg = "Conflict: Multiple release dates found in these songs.\nSelect which date to keep for the Option Group:\n\n";
+      uniqueDates.forEach((d, i) => promptMsg += `${i + 1}: ${d}\n`);
+      promptMsg += "\nEnter option number (1, 2, etc.):";
+
+      let choice = prompt(promptMsg, "1");
+      let selectedIdx = parseInt(choice) - 1;
+      if (!isNaN(selectedIdx) && uniqueDates[selectedIdx]) {
+        resolvedGroupDate = uniqueDates[selectedIdx];
+      } else {
+        resolvedGroupDate = uniqueDates[0];
+      }
+    }
+
+    if (targetItem.type === "container") {
+      targetItem.songs = mergedSongs;
+      if (resolvedGroupDate) targetItem.releaseDate = resolvedGroupDate;
+    } else {
+      let containerIndex = songs.findIndex(s => s.id === targetId);
+      let newContainer = {
+        id: "c_" + Date.now(),
+        type: "container",
+        title: `${targetItem.title} / ${extracted.title} Slot`,
+        releaseDate: resolvedGroupDate,
+        songs: mergedSongs
+      };
+      songs[containerIndex] = newContainer;
+    }
+    renderList();
+  }
+
+  /* Release Calendar Modal Engine */
+  function openCalendarModal() {
+    renderCalendarView();
+    document.getElementById("calendarModal").style.display = "flex";
+  }
+
+  function closeCalendarModal() {
+    document.getElementById("calendarModal").style.display = "none";
+  }
+
+  function changeCalMonth(delta) {
+    calCurrentDate.setMonth(calCurrentDate.getMonth() + delta);
+    renderCalendarView();
+  }
+
+  function renderCalendarView() {
+    const year = calCurrentDate.getFullYear();
+    const month = calCurrentDate.getMonth();
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    document.getElementById("calMonthYearTitle").textContent = `${monthNames[month]} ${year}`;
+
+    // Collect all release dates in active list
+    const releaseMap = {};
+    const songs = getCurrentSongs();
+
+    songs.forEach(item => {
+      if (item.type === "container" && item.releaseDate) {
+        if (!releaseMap[item.releaseDate]) releaseMap[item.releaseDate] = [];
+        releaseMap[item.releaseDate].push(`[Option Group] ${item.title}`);
+      } else if (item.releaseDate) {
+        if (!releaseMap[item.releaseDate]) releaseMap[item.releaseDate] = [];
+        releaseMap[item.releaseDate].push(item.title);
+      }
+    });
+
+    const grid = document.getElementById("calendarGrid");
+    grid.innerHTML = "";
+
+    // Day names row
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(d => {
+      let div = document.createElement("div");
+      div.className = "cal-day-name";
+      div.textContent = d;
+      grid.appendChild(div);
+    });
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    // Empty lead cells
+    for (let i = 0; i < firstDayIndex; i++) {
+      let cell = document.createElement("div");
+      cell.className = "cal-cell empty";
+      grid.appendChild(cell);
+    }
+
+    // Days cells
+    for (let day = 1; day <= totalDays; day++) {
+      let cell = document.createElement("div");
+      cell.className = "cal-cell";
+
+      let monthStr = String(month + 1).padStart(2, '0');
+      let dayStr = String(day).padStart(2, '0');
+      let dateKey = `${year}-${monthStr}-${dayStr}`;
+
+      let hasReleases = releaseMap[dateKey];
+      if (hasReleases) cell.classList.add("has-release");
+
+      cell.innerHTML = `
+        <span class="cal-day-num">${day}</span>
+        ${hasReleases ? `<span class="cal-badge">${hasReleases.length} Track${hasReleases.length > 1 ? 's' : ''}</span>` : ''}
+      `;
+
+      cell.onclick = () => {
+        const details = document.getElementById("calSelectedDayDetails");
+        if (hasReleases) {
+          details.innerHTML = `<strong>Scheduled for ${dateKey}:</strong><br>• ` + hasReleases.join("<br>• ");
+        } else {
+          details.innerHTML = `<em>No releases scheduled for ${dateKey}</em>`;
+        }
+      };
+
+      grid.appendChild(cell);
+    }
+  }
+
+  /* Copy & Paste Selected Songs Logic */
+  function copySelectedSongs() {
+    let songs = getCurrentSongs();
+    let selectedList = [];
+
+    songs.forEach(s => {
+      if (s.type === "container") {
+        s.songs.forEach(ns => { if (ns.selected) selectedList.push(JSON.parse(JSON.stringify(ns))); });
+      } else {
+        if (s.selected) selectedList.push(JSON.parse(JSON.stringify(s)));
+      }
+    });
+
+    if (selectedList.length === 0) {
+      alert("Please check at least one song to copy!");
+      return;
+    }
+
+    copiedSongsBuffer = selectedList;
+    updateClipboardUI();
+    alert(`Copied ${copiedSongsBuffer.length} song(s) to clipboard buffer!`);
+  }
+
+  function pasteCopiedSongs() {
+    if (copiedSongsBuffer.length === 0) return;
+
+    pushUndoState();
+    let songs = getCurrentSongs();
+
+    copiedSongsBuffer.forEach(item => {
+      let newItem = JSON.parse(JSON.stringify(item));
+      newItem.id = "s_copy_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4);
+      newItem.selected = false;
+      songs.push(newItem);
+    });
+
+    renderList();
+  }
+
+  function updateClipboardUI() {
+    const pasteBtn = document.getElementById("pasteBtn");
+    const display = document.getElementById("copiedCountDisplay");
+    display.textContent = copiedSongsBuffer.length;
+    pasteBtn.disabled = copiedSongsBuffer.length === 0;
+  }
+
+  /* "All Songs" Library Popup Logic */
+  function openAllSongsModal() {
+    const container = document.getElementById("allSongsContainer");
+    container.innerHTML = "";
+
+    const activeSongs = getCurrentSongs();
+    const assignedTitles = new Set();
+
+    activeSongs.forEach(s => {
+      if (s.type === "container") s.songs.forEach(ns => assignedTitles.add(ns.title));
+      else assignedTitles.add(s.title);
+    });
+
+    const unassigned = fullSongMasterVault.filter(title => !assignedTitles.has(title));
+
+    if (unassigned.length === 0) {
+      container.innerHTML = `<div style="padding:1rem; color:var(--text-muted); text-align:center;">All master library songs are already in this order list!</div>`;
+    } else {
+      unassigned.forEach((title, idx) => {
+        let item = document.createElement("div");
+        item.className = "all-songs-item";
+        item.innerHTML = `
+          <input type="checkbox" class="catalog-chk" id="chk_catalog_${idx}" value="${title}" onclick="handleCatalogCheckboxClick(event)">
+          <label for="chk_catalog_${idx}">${title}</label>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    lastCheckedCatalogBox = null;
+    document.getElementById("allSongsModal").style.display = "flex";
+  }
+
+  function handleCatalogCheckboxClick(e) {
+    const checkboxes = Array.from(document.querySelectorAll(".catalog-chk"));
+    const targetCheckbox = e.target;
+
+    if (e.shiftKey && lastCheckedCatalogBox) {
+      let start = checkboxes.indexOf(lastCheckedCatalogBox);
+      let end = checkboxes.indexOf(targetCheckbox);
+
+      if (start !== -1 && end !== -1) {
+        let range = checkboxes.slice(Math.min(start, end), Math.max(start, end) + 1);
+        let isChecked = targetCheckbox.checked;
+        range.forEach(cb => cb.checked = isChecked);
+      }
+    }
+
+    lastCheckedCatalogBox = targetCheckbox;
+  }
+
+  function setAllCatalogCheckboxes(isChecked) {
+    document.querySelectorAll(".catalog-chk").forEach(cb => cb.checked = isChecked);
+  }
+
+  function closeAllSongsModal() {
+    document.getElementById("allSongsModal").style.display = "none";
+  }
+
+  function addSelectedFromCatalog() {
+    const checkboxes = document.querySelectorAll("#allSongsContainer input[type='checkbox']:checked");
+    if (checkboxes.length === 0) {
+      closeAllSongsModal();
+      return;
+    }
+
+    pushUndoState();
+    let songs = getCurrentSongs();
+
+    checkboxes.forEach(chk => {
+      songs.push({
+        id: "s_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+        title: chk.value,
+        energy: "Mid",
+        color: "#6366f1",
+        releaseDate: "",
+        selected: false,
+        notes: ""
+      });
+    });
+
+    closeAllSongsModal();
+    renderList();
+  }
+
+  /* Actions */
+  function updateReleaseDate(songId, dateVal) {
+    let song = findSongById(getCurrentSongs(), songId);
+    if (song) { pushUndoState(); song.releaseDate = dateVal; saveStateToLocalStorage(); }
+  }
+
+  function toggleSelectAll(isChecked) {
+    let songs = getCurrentSongs();
+    songs.forEach(s => {
+      if (s.type === "container") s.songs.forEach(ns => ns.selected = isChecked);
+      else s.selected = isChecked;
+    });
+    renderList();
+  }
+
+  function applyGlobalColor(colorHex) {
+    let songs = getCurrentSongs();
+    let updatedCount = 0;
+    pushUndoState();
+    songs.forEach(s => {
+      if (s.type === "container") {
+        s.songs.forEach(ns => { if (ns.selected) { ns.color = colorHex; updatedCount++; } });
+      } else {
+        if (s.selected) { s.color = colorHex; updatedCount++; }
+      }
+    });
+    if (updatedCount > 0) renderList();
+    else alert("Please check at least one song to apply batch color!");
+  }
+
+  function editNotes(id) {
+    let songs = getCurrentSongs();
+    let selectedSongs = [];
+    songs.forEach(s => {
+      if (s.type === "container") {
+        s.songs.forEach(ns => { if (ns.selected) selectedSongs.push(ns); });
+      } else {
+        if (s.selected) selectedSongs.push(s);
+      }
+    });
+
+    let currentSong = findSongById(songs, id);
+
+    if (selectedSongs.length > 1 && currentSong && currentSong.selected) {
+      let confirmBatch = confirm(`Edit ${selectedSongs.length} songs notes? This will reformat any existing notes.`);
+      if (confirmBatch) {
+        let newNotes = prompt(`Enter new notes for ${selectedSongs.length} selected songs:`);
+        if (newNotes !== null) {
+          pushUndoState();
+          selectedSongs.forEach(s => s.notes = newNotes.trim());
+          renderList();
+        }
+      }
+    } else if (currentSong) {
+      let newNotes = prompt("Edit notes & feedback:", currentSong.notes);
+      if (newNotes !== null) {
+        pushUndoState();
+        currentSong.notes = newNotes.trim();
+        renderList();
+      }
+    }
+  }
+
+  function deleteContainerPrompt(containerId) {
+    let songs = getCurrentSongs();
+    let cIndex = songs.findIndex(s => s.id === containerId);
+    if (cIndex === -1) return;
+
+    let container = songs[cIndex];
+    let keepSongs = confirm(`Do you want to keep the ${container.songs.length} songs in the list?\n\nClick "OK" to un-group them into the list.\nClick "Cancel" to delete the group and songs entirely.`);
+
+    pushUndoState();
+    if (keepSongs) songs.splice(cIndex, 1, ...container.songs);
+    else songs.splice(cIndex, 1);
+    renderList();
+  }
+
+  function removeSongFromContainer(containerId, songId) {
+    let songs = getCurrentSongs();
+    let container = songs.find(s => s.id === containerId);
+    if (!container) return;
+
+    pushUndoState();
+    let removedSong = container.songs.find(s => s.id === songId);
+    container.songs = container.songs.filter(s => s.id !== songId);
+    songs.push(removedSong);
+    renderList();
+  }
+
+  function renameGroupTitle(containerId) {
+    let container = getCurrentSongs().find(s => s.id === containerId);
+    if (container) {
+      let newTitle = prompt("Enter Group Title:", container.title);
+      if (newTitle && newTitle.trim()) {
+        pushUndoState();
+        container.title = newTitle.trim();
+        renderList();
+      }
+    }
+  }
+
+  function renameSong(id) {
+    let item = findSongById(getCurrentSongs(), id);
+    if (item) {
+      let newTitle = prompt("Enter new title:", item.title);
+      if (newTitle && newTitle.trim()) {
+        pushUndoState();
+        item.title = newTitle.trim();
+        renderList();
+      }
+    }
+  }
+
+  function changeColor(id, colorHex) {
+    let item = findSongById(getCurrentSongs(), id);
+    if (item) { pushUndoState(); item.color = colorHex; renderList(); }
+  }
+
+  function addNewSong() {
+    const title = prompt("Enter title for new song:");
+    if (title && title.trim()) {
+      pushUndoState();
+      getCurrentSongs().push({
+        id: "s_" + Date.now(),
+        title: title.trim(),
+        energy: "Mid",
+        color: "#6366f1",
+        releaseDate: "",
+        selected: false,
+        notes: ""
+      });
+      renderList();
+    }
+  }
+
+  /* Sub-second Animated Trashing Function */
+  function deleteSong(id) {
+    let group = getActiveGroupData();
+    let songs = getCurrentSongs();
+
+    let selectedIds = new Set();
+    songs.forEach(s => {
+      if (s.type === "container") {
+        s.songs.forEach(ns => { if (ns.selected) selectedIds.add(ns.id); });
+      } else {
+        if (s.selected) selectedIds.add(s.id);
+      }
+    });
+
+    let targetsToAnimate = [];
+    if (selectedIds.size > 0 && (selectedIds.has(id) || selectedIds.size > 1)) {
+      selectedIds.forEach(targetId => {
+        let el = document.querySelector(`[data-id="${targetId}"], [data-subid="${targetId}"]`);
+        if (el) targetsToAnimate.push(el);
+      });
+    } else {
+      let el = document.querySelector(`[data-id="${id}"], [data-subid="${id}"]`);
+      if (el) targetsToAnimate.push(el);
+    }
+
+    // Trigger visual slide & fade (200ms)
+    targetsToAnimate.forEach(el => el.classList.add("trashing"));
+    triggerTrashToast();
+
+    setTimeout(() => {
+      pushUndoState();
+      if (selectedIds.size > 0 && (selectedIds.has(id) || selectedIds.size > 1)) {
+        let updatedList = [];
+        songs.forEach(s => {
+          if (s.type === "container") {
+            s.songs = s.songs.filter(ns => !selectedIds.has(ns.id));
+            if (s.songs.length > 0) updatedList.push(s);
+          } else {
+            if (!selectedIds.has(s.id)) updatedList.push(s);
+          }
+        });
+        group.listsDatabase[group.currentKey].songs = updatedList;
+      } else {
+        let updatedList = [];
+        songs.forEach(s => {
+          if (s.type === "container") {
+            s.songs = s.songs.filter(ns => ns.id !== id);
+            if (s.songs.length > 0) updatedList.push(s);
+          } else {
+            if (s.id !== id) updatedList.push(s);
+          }
+        });
+        group.listsDatabase[group.currentKey].songs = updatedList;
+      }
+
+      document.getElementById("selectAllCheckbox").checked = false;
+      renderList();
+    }, 200);
+  }
+
+  /* User Sub-Group Modal Logic with New Profile Template Setup */
+  function openUserModal() {
+    const modalSelect = document.getElementById("modalUserSelect");
+    modalSelect.innerHTML = '<option value="">-- Select Existing Sub-Group --</option>';
+    
+    Object.keys(masterDatabase.groups).forEach(grpName => {
+      let opt = document.createElement("option");
+      opt.value = grpName;
+      opt.textContent = grpName;
+      if (grpName === masterDatabase.activeGroup) opt.selected = true;
+      modalSelect.appendChild(opt);
+    });
+
+    document.getElementById("modalUserNewInput").value = "";
+    document.getElementById("userModal").style.display = "flex";
+  }
+
+  function handleModalSubmit() {
+    const selectVal = document.getElementById("modalUserSelect").value;
+    const newInput = document.getElementById("modalUserNewInput").value.trim();
+
+    let targetGroupName = "";
+    if (newInput) {
+      targetGroupName = newInput.endsWith("Lists") || newInput.endsWith("lists") ? newInput : `${newInput}'s Lists`;
+    } else if (selectVal) {
+      targetGroupName = selectVal;
+    }
+
+    if (!targetGroupName) {
+      alert("Please select an existing sub-group or type your name!");
+      return;
+    }
+
+    if (!masterDatabase.groups[targetGroupName]) {
+      pushUndoState();
+      let initSongs = fullSongMasterVault.map((t, i) => ({
+        id: "s_init_" + i,
+        title: t,
+        energy: t === "Losing" ? "Low" : (t === "No Comment" || t === "Hot Boy" || t === "Slowmotion" || t === "I Promise" || t === "V12" || t === "Rendezvous" || t === "Show Stopper") ? "High" : "Mid",
+        color: "#6366f1",
+        releaseDate: "",
+        selected: false,
+        notes: ""
+      }));
+
+      masterDatabase.groups[targetGroupName] = {
+        "listsDatabase": {
+          "order1": {
+            "listName": "Untitled",
+            "isFav": true,
+            "songs": initSongs
+          },
+          "order2": {
+            "listName": "Empty Order",
+            "isFav": true,
+            "songs": []
+          }
+        },
+        "favoritesOrder": ["order1", "order2"],
+        "currentKey": "order1"
+      };
+    }
+
+    masterDatabase.activeGroup = targetGroupName;
+    document.getElementById("userModal").style.display = "none";
+    renderList();
+  }
+
+  /* UI Render & Top Categorized Dropdown */
+  function renderControlsUI() {
+    const group = getActiveGroupData();
+    const listData = group.listsDatabase[group.currentKey];
+
+    // Title Display
+    document.getElementById("activeListDisplay").textContent = `${listData.listName} (${masterDatabase.activeGroup})`;
+
+    // Favorite Toggle Button State
+    const favBtn = document.getElementById("favToggleBtn");
+    if (listData.isFav) {
+      favBtn.textContent = "⭐ Remove Favorite Button";
+      favBtn.classList.add("is-fav");
+    } else {
+      favBtn.textContent = "☆ Create Favorite Button";
+      favBtn.classList.remove("is-fav");
+    }
+
+    // Categorized Dropdown Selector
+    const selector = document.getElementById("listSelector");
+    selector.innerHTML = "";
+
+    Object.keys(masterDatabase.groups).forEach(grpName => {
+      let optGroup = document.createElement("optgroup");
+      optGroup.label = grpName;
+
+      let grpData = masterDatabase.groups[grpName];
+      Object.keys(grpData.listsDatabase).forEach(key => {
+        let item = grpData.listsDatabase[key];
+        let opt = document.createElement("option");
+        opt.value = `${grpName}::${key}`;
+        opt.textContent = `${item.listName} ${item.isFav ? '★' : ''}`;
+        if (grpName === masterDatabase.activeGroup && key === group.currentKey) {
+          opt.selected = true;
+        }
+        optGroup.appendChild(opt);
+      });
+
+      selector.appendChild(optGroup);
+    });
+
+    let newGrpOption = document.createElement("option");
+    newGrpOption.value = "__CREATE_NEW_GROUP__";
+    newGrpOption.textContent = "➕ Create New Sub-Group...";
+    selector.appendChild(newGrpOption);
+
+    // Render Gold Drag-and-Drop Favorite Buttons
+    const favBar = document.getElementById("favoriteButtonsBar");
+    favBar.innerHTML = "";
+
+    group.favoritesOrder.forEach((key, index) => {
+      let item = group.listsDatabase[key];
+      if (item && item.isFav) {
+        let btn = document.createElement("div");
+        btn.className = `btn-preset ${key === group.currentKey ? 'active' : ''}`;
+        btn.draggable = true;
+        btn.dataset.key = key;
+        btn.onclick = () => switchList(key);
+
+        btn.innerHTML = `
+          <span class="preset-main">Order ${index + 1}</span>
+          <span class="preset-sub">${item.listName}</span>
+        `;
+
+        btn.addEventListener("dragstart", (e) => {
+          draggedButtonKey = key;
+          btn.classList.add("dragging");
+        });
+
+        btn.addEventListener("dragend", () => {
+          btn.classList.remove("dragging");
+          draggedButtonKey = null;
+        });
+
+        btn.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          if (draggedButtonKey && draggedButtonKey !== key) {
+            let draggingIdx = group.favoritesOrder.indexOf(draggedButtonKey);
+            let targetIdx = group.favoritesOrder.indexOf(key);
+
+            pushUndoState();
+            group.favoritesOrder.splice(draggingIdx, 1);
+            group.favoritesOrder.splice(targetIdx, 0, draggedButtonKey);
+            renderControlsUI();
+          }
+        });
+
+        favBar.appendChild(btn);
+      }
+    });
+  }
+
+  function switchList(key) {
+    getActiveGroupData().currentKey = key;
+    renderList();
+  }
+
+  function handleDropdownSelect(compoundValue) {
+    if (compoundValue === "__CREATE_NEW_GROUP__") {
+      openUserModal();
+      return;
+    }
+
+    let [grpName, key] = compoundValue.split("::");
+    if (grpName && key) {
+      masterDatabase.activeGroup = grpName;
+      masterDatabase.groups[grpName].currentKey = key;
+      renderList();
+    }
+  }
+
+  function renameActiveList() {
+    let group = getActiveGroupData();
+    let item = group.listsDatabase[group.currentKey];
+    let newName = prompt("Enter List Name:", item.listName);
+    if (newName && newName.trim()) {
+      pushUndoState();
+      item.listName = newName.trim();
+      renderList();
+    }
+  }
+
+  function toggleCurrentFavorite() {
+    pushUndoState();
+    let group = getActiveGroupData();
+    let item = group.listsDatabase[group.currentKey];
+    item.isFav = !item.isFav;
+
+    if (item.isFav && !group.favoritesOrder.includes(group.currentKey)) {
+      group.favoritesOrder.push(group.currentKey);
+    } else if (!item.isFav) {
+      group.favoritesOrder = group.favoritesOrder.filter(k => k !== group.currentKey);
+    }
+    renderList();
+  }
+
+  function saveNewList() {
+    let name = prompt("Enter Name for duplicated List:");
+    if (name && name.trim()) {
+      pushUndoState();
+      let group = getActiveGroupData();
+      let newKey = "custom_" + Date.now();
+      group.listsDatabase[newKey] = {
+        listName: name.trim(),
+        isFav: true,
+        songs: JSON.parse(JSON.stringify(getCurrentSongs()))
+      };
+      group.favoritesOrder.push(newKey);
+      switchList(newKey);
+    }
+  }
+
+  function startFreshList() {
+    let name = prompt("Name Your List:");
+    if (name && name.trim()) {
+      pushUndoState();
+      let group = getActiveGroupData();
+      let newKey = "custom_" + Date.now();
+      group.listsDatabase[newKey] = {
+        listName: name.trim(),
+        isFav: true,
+        songs: []
+      };
+      group.favoritesOrder.push(newKey);
+      switchList(newKey);
+    }
+  }
+
+  function deleteCurrentList() {
+    let group = getActiveGroupData();
+    let songs = getCurrentSongs();
+
+    let selectedCount = 0;
+    songs.forEach(s => {
+      if (s.type === "container") s.songs.forEach(ns => { if (ns.selected) selectedCount++; });
+      else if (s.selected) selectedCount++;
+    });
+
+    if (selectedCount > 0) {
+      if (confirm(`Delete all ${selectedCount} selected tracks from "${group.listsDatabase[group.currentKey].listName}"?`)) {
+        deleteSong('BATCH_DELETE');
+      }
+      return;
+    }
+
+    let keys = Object.keys(group.listsDatabase);
+    if (keys.length <= 1) {
+      alert("You cannot delete the only remaining list in this sub-group!");
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete "${group.listsDatabase[group.currentKey].listName}"?`)) {
+      pushUndoState();
+      delete group.listsDatabase[group.currentKey];
+      group.favoritesOrder = group.favoritesOrder.filter(k => k !== group.currentKey);
+
+      let remainingKey = group.favoritesOrder[0] || Object.keys(group.listsDatabase)[0];
+      switchList(remainingKey);
+    }
+  }
+
+  function exportProjectFile() {
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(masterDatabase, null, 2));
+    let downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `Album_Strategy_Master_Backup.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  }
+
+  function triggerImportFile() { document.getElementById("importFileInput").click(); }
+
+  function importProjectFile(e) {
+    let file = e.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        let parsed = JSON.parse(evt.target.result);
+        pushUndoState();
+
+        if (parsed.groups) {
+          masterDatabase = parsed;
+        } else if (parsed.listsDatabase) {
+          masterDatabase.groups[masterDatabase.activeGroup] = parsed;
+        }
+
+        renderList();
+        alert("Project imported successfully!");
+      } catch (err) {
+        alert("Invalid project file!");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function exportOrder() {
+    let textLines = [];
+    getCurrentSongs().forEach((item, i) => {
+      if (item.type === "container") {
+        let groupTitles = item.songs.map(s => s.title).join(" OR ");
+        textLines.push(`${i + 1}. [OPTION GROUP: ${groupTitles}] ${item.releaseDate ? '[' + item.releaseDate + ']' : ''}`);
+      } else {
+        textLines.push(`${i + 1}. ${item.title} (${item.energy}) ${item.releaseDate ? '[' + item.releaseDate + '] ' : ''}${item.notes ? '- ' + item.notes : ''}`);
+      }
+    });
+    navigator.clipboard.writeText(textLines.join("\n"));
+    alert("Tracklist copied to clipboard!");
+  }
+
+  // Initial load
+  loadStateFromLocalStorage();
+  openUserModal();
+  renderList();
+</script>
+
+</body>
+</html>
