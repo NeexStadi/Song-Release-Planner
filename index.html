@@ -172,7 +172,7 @@
       background: #0f172a; color: var(--text);
       border: 1px solid #475569; padding: 0.6rem 0.8rem;
       border-radius: 8px; font-size: 0.88rem; font-weight: 600;
-      cursor: pointer; min-width: 220px;
+      cursor: pointer; min-width: 220px; width: 100%;
     }
 
     .btn {
@@ -213,7 +213,7 @@
     /* Energy Legend */
     .energy-legend {
       background: var(--card-bg); padding: 0.75rem 1rem;
-      border-radius: 12px; border: 1px solid #334155; margin-top: 0.8rem; margin-bottom: 1rem;
+      border-radius: 12px; border: 1px solid #334155; margin-top: 0.8rem;
       display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
     }
 
@@ -407,11 +407,9 @@
     </div>
     
     <!-- View Mode -->
-    <div id="helpViewArea" style="font-size:0.9rem; line-height:1.6; color:#e2e8f0; max-height:400px; overflow-y:auto; background:#0f172a; padding:1rem; border-radius:8px; border:1px solid #334155; margin-bottom:1rem;">
-      <!-- Content loaded dynamically -->
-    </div>
+    <div id="helpViewArea" style="font-size:0.9rem; line-height:1.6; color:#e2e8f0; max-height:400px; overflow-y:auto; background:#0f172a; padding:1rem; border-radius:8px; border:1px solid #334155; margin-bottom:1rem;"></div>
 
-    <!-- Edit Mode (hidden by default) -->
+    <!-- Edit Mode -->
     <div id="helpEditArea" style="display:none; margin-bottom:1rem;">
       <textarea id="helpTextarea" style="width:100%; height:280px; background:#0f172a; color:#f8fafc; border:1px solid #475569; border-radius:8px; padding:0.75rem; font-family:inherit; font-size:0.9rem; line-height:1.5; resize:vertical;"></textarea>
       <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;">💡 HTML basic formatting or line breaks are allowed.</div>
@@ -456,9 +454,7 @@
       <span style="font-size:0.75rem; color:var(--text-muted);">💡 Tip: Hold Shift + Click to select range</span>
     </div>
 
-    <div class="all-songs-scroll" id="allSongsContainer">
-      <!-- Renders dynamically -->
-    </div>
+    <div class="all-songs-scroll" id="allSongsContainer"></div>
     <div style="display:flex; gap:0.5rem;">
       <button class="btn btn-success" style="flex:1;" onclick="addSelectedFromCatalog()">➕ Add Selected to Order</button>
       <button class="btn" onclick="closeAllSongsModal()">Cancel</button>
@@ -482,9 +478,7 @@
       </div>
     </div>
     
-    <div id="calendarDisplayArea">
-      <!-- Rendered dynamically -->
-    </div>
+    <div id="calendarDisplayArea"></div>
 
     <div id="calSelectedDayDetails" style="text-align:left; font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; min-height:42px; background:#0f172a; padding:0.6rem; border-radius:6px; border:1px solid #334155;">
       Click a date or month to inspect scheduled releases...
@@ -554,15 +548,13 @@
       </div>
     </div>
 
-    <!-- Energy Legend (Positioned above Batch Tools) -->
+    <!-- Energy Legend -->
     <div class="energy-legend">
       <span class="legend-title">Drag or click tag to assign:</span>
-      <div class="tag-container" id="energyTagsContainer">
-        <!-- Rendered dynamically with add tag capability -->
-      </div>
+      <div class="tag-container" id="energyTagsContainer"></div>
     </div>
 
-    <!-- Multi-Select & Global Color Batch Bar (Moved below Energy Legend) -->
+    <!-- Multi-Select & Global Color Batch Bar -->
     <div class="batch-tools">
       <label><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"> Select All Tracks</label>
       <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(Shift+Click range | Option+Click clears all)</span>
@@ -593,30 +585,13 @@
     "V12", "You Knew First", "123"
   ];
 
-  // Default Custom Tags
+  // Default Custom Energy Tags
   let customEnergyTags = [
     { label: "Low", color: "#10b981", class: "badge-low" },
     { label: "Mid", color: "#f59e0b", class: "badge-mid" },
     { label: "High", color: "#ef4444", class: "badge-high" }
   ];
 
-  const initialExportData = {
-    "listsDatabase": {
-      "order1": {
-        "listName": "Nico_4 Song Release",
-        "isFav": true,
-        "songs": [
-          {
-            "id": "c_1784600274755", "type": "container", "title": "Midas / Losing Slot | EITHER OR", "releaseDate": "",
-            "songs": [
-              { "id": "s1", "title": "Midas", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "Strong melodies, single worthy." },
-              { "id": "s12", "title": "Losing", "energy": "Low", "color": "#3b82f6", "releaseDate": "", "selected": false, "notes": "Slower, very strong lyric/melody" }
-            ]
-          },
-          {
-            "id": "c_1784600045928", "type": "container", "title": "Pressure / Pull Up On Me | DUAL RELEASE", "releaseDate": "",
-            "songs": [
-              { "id": "s2", "title": "Pressure", "energy": "Mid", "color": "#6366f1", "releaseDate": "", "selected": false, "notes": "" },
   let defaultHelpGuide = `
     <h3 style="margin-top:0; color:var(--gold-accent);">🚀 Getting Started with Content Release Planner</h3>
     <p><strong>1. Drag & Drop Reordering:</strong> Click and drag any track card to change its position in the list.</p>
@@ -630,6 +605,55 @@
     <p><strong>4. Release Calendar & iCal Export:</strong> Set release dates on tracks or groups, view them on the interactive Calendar, and export <code>.ics</code> files to import into Apple Calendar or Google Calendar.</p>
     <p><strong>5. Profiles & Multi-List Management:</strong> Create or switch user profiles/sub-groups and create top favorite order buttons for rapid A/B testing.</p>
   `;
+
+  // Master State Object
+  let masterDatabase = {
+    activeGroup: "Nico's Lists",
+    customEnergyTags: customEnergyTags,
+    helpGuideContent: defaultHelpGuide,
+    groups: {
+      "Nico's Lists": {
+        listsDatabase: {
+          "order1": {
+            listName: "Nico_4 Song Release",
+            isFav: true,
+            songs: [
+              {
+                id: "c_1784600274755", type: "container", groupType: "decision", title: "Midas / Losing Slot", releaseDate: "",
+                songs: [
+                  { id: "s1", title: "Midas", energy: "Mid", color: "#6366f1", releaseDate: "", selected: false, notes: "Strong melodies, single worthy." },
+                  { id: "s12", title: "Losing", energy: "Low", color: "#3b82f6", releaseDate: "", selected: false, notes: "Slower, very strong lyric/melody" }
+                ]
+              },
+              {
+                id: "c_1784600045928", type: "container", groupType: "bundle", title: "Pressure / Pull Up On Me", releaseDate: "",
+                songs: [
+                  { id: "s2", title: "Pressure", energy: "Mid", color: "#6366f1", releaseDate: "", selected: false, notes: "" },
+                  { id: "s3", title: "Pull Up On Me", energy: "High", color: "#ef4444", releaseDate: "", selected: false, notes: "" }
+                ]
+              },
+              { id: "s4", title: "DDG", energy: "Mid", color: "#6366f1", releaseDate: "", selected: false, notes: "" },
+              { id: "s5", title: "Intention", energy: "Mid", color: "#6366f1", releaseDate: "", selected: false, notes: "" }
+            ]
+          }
+        },
+        favoritesOrder: ["order1"],
+        currentKey: "order1"
+      }
+    }
+  };
+
+  // Global Working State
+  let undoHistory = [];
+  let copiedSongsBuffer = [];
+  let draggedItemData = null;
+  let draggedEnergyValue = null;
+  let draggedButtonKey = null;
+  let lastCheckedMainBox = null;
+  let lastCheckedCatalogBox = null;
+
+  let calendarViewMode = "month";
+  let calCurrentDate = new Date();
 
   function loadStateFromLocalStorage() {
     let saved = localStorage.getItem("song_builder_master_v9");
@@ -651,7 +675,7 @@
     localStorage.setItem("song_builder_master_v9", JSON.stringify(masterDatabase));
   }
 
-  /* Help Modal Handler */
+  /* Help Modal Handlers */
   function openHelpModal() {
     document.getElementById("helpViewArea").innerHTML = defaultHelpGuide;
     document.getElementById("helpTextarea").value = defaultHelpGuide;
@@ -692,11 +716,6 @@
     saveStateToLocalStorage();
     openHelpModal();
     alert("Help guide updated and saved!");
-  }
-
-  function saveStateToLocalStorage() {
-    masterDatabase.customEnergyTags = customEnergyTags;
-    localStorage.setItem("song_builder_master_v9", JSON.stringify(masterDatabase));
   }
 
   function getActiveGroupData() {
@@ -742,6 +761,7 @@
     }
   }
 
+  /* Render Master Engine */
   function renderList() {
     saveStateToLocalStorage();
 
@@ -759,7 +779,7 @@
     updateClipboardUI();
   }
 
-  /* Render Custom Energy Legend Toolbar with Add Tag Capability */
+  /* Custom Energy Legend Toolbar */
   function renderEnergyLegend() {
     const container = document.getElementById("energyTagsContainer");
     container.innerHTML = "";
@@ -802,7 +822,6 @@
     renderList();
   }
 
-  /* Cycle energy tag on badge click */
   function cycleEnergyTag(songId) {
     let song = findSongById(getCurrentSongs(), songId);
     if (!song) return;
@@ -856,7 +875,6 @@
     containerEl.appendChild(card);
   }
 
-  /* Render Container Card with Full Inner Song Ordering & Drag Support */
   function renderContainerCard(containerEl, group, index) {
     const card = document.createElement("li");
     let isBundle = group.groupType === 'bundle';
@@ -960,7 +978,6 @@
     containerEl.appendChild(card);
   }
 
-  /* Sub-song ordering helper buttons */
   function moveSubSong(containerId, index, delta) {
     let container = getCurrentSongs().find(s => s.id === containerId);
     if (!container || !container.songs) return;
@@ -1210,7 +1227,7 @@
     renderList();
   }
 
-  /* Release Calendar Modal Engine */
+  /* Calendar Functions */
   function openCalendarModal() {
     renderCalendarView();
     document.getElementById("calendarModal").style.display = "flex";
@@ -1249,7 +1266,7 @@
     songs.forEach(item => {
       if (item.type === "container" && item.releaseDate) {
         if (!releaseMap[item.releaseDate]) releaseMap[item.releaseDate] = [];
-        releaseMap[item.releaseDate].push(`[Option Group] ${item.title}`);
+        releaseMap[item.releaseDate].push(`[Group] ${item.title}`);
       } else if (item.releaseDate) {
         if (!releaseMap[item.releaseDate]) releaseMap[item.releaseDate] = [];
         releaseMap[item.releaseDate].push(item.title);
@@ -1356,28 +1373,28 @@
     songs.forEach(item => {
       let dateVal = item.releaseDate;
       if (dateVal) {
-        let title = item.type === "container" ? `[Option Group] ${item.title}` : item.title;
+        let title = item.type === "container" ? `[Group] ${item.title}` : item.title;
         let cleanDate = dateVal.replace(/-/g, '');
         events.push(
 `BEGIN:VEVENT
-SUMMARY:Music Release: ${title}
+SUMMARY:Release: ${title}
 DTSTART;VALUE=DATE:${cleanDate}
 DTEND;VALUE=DATE:${cleanDate}
-DESCRIPTION:Scheduled release for ${title} via Interactive Sequence Builder.
+DESCRIPTION:Scheduled release for ${title} via Content Release Planner.
 END:VEVENT`
         );
       }
     });
 
     if (events.length === 0) {
-      alert("No songs or option groups have assigned release dates to export!");
+      alert("No songs or groups have assigned release dates to export!");
       return;
     }
 
     let icsContent = 
 `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Interactive Song Sequence Builder//Release Calendar//EN
+PRODID:-//Content Release Planner//EN
 ${events.join("\n")}
 END:VCALENDAR`;
 
@@ -1388,7 +1405,7 @@ END:VCALENDAR`;
     anchor.click();
   }
 
-  /* Copy & Paste Selected Songs Logic */
+  /* Copy & Paste Selected Songs */
   function copySelectedSongs() {
     let songs = getCurrentSongs();
     let selectedList = [];
@@ -1434,7 +1451,7 @@ END:VCALENDAR`;
     pasteBtn.disabled = copiedSongsBuffer.length === 0;
   }
 
-  /* "All Songs" Library Popup Logic */
+  /* "All Songs" Catalog Popup */
   function openAllSongsModal() {
     const container = document.getElementById("allSongsContainer");
     container.innerHTML = "";
@@ -1787,17 +1804,12 @@ END:VCALENDAR`;
       masterDatabase.groups[targetGroupName] = {
         "listsDatabase": {
           "order1": {
-            "listName": "Untitled",
+            "listName": "Untitled List",
             "isFav": true,
             "songs": initSongs
-          },
-          "order2": {
-            "listName": "Empty Order",
-            "isFav": true,
-            "songs": []
           }
         },
-        "favoritesOrder": ["order1", "order2"],
+        "favoritesOrder": ["order1"],
         "currentKey": "order1"
       };
     }
@@ -2008,7 +2020,7 @@ END:VCALENDAR`;
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(masterDatabase, null, 2));
     let downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `Album_Strategy_Master_Backup.json`);
+    downloadAnchor.setAttribute("download", `Content_Release_Planner_Backup.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -2046,7 +2058,7 @@ END:VCALENDAR`;
     getCurrentSongs().forEach((item, i) => {
       if (item.type === "container") {
         let groupTitles = item.songs.map(s => s.title).join(" OR ");
-        textLines.push(`${i + 1}. [OPTION GROUP: ${groupTitles}] ${item.releaseDate ? '[' + item.releaseDate + ']' : ''}`);
+        textLines.push(`${i + 1}. [GROUP: ${groupTitles}] ${item.releaseDate ? '[' + item.releaseDate + ']' : ''}`);
       } else {
         textLines.push(`${i + 1}. ${item.title} (${item.energy}) ${item.releaseDate ? '[' + item.releaseDate + '] ' : ''}${item.notes ? '- ' + item.notes : ''}`);
       }
@@ -2057,7 +2069,6 @@ END:VCALENDAR`;
 
   // Initial load
   loadStateFromLocalStorage();
-  openUserModal();
   renderList();
 </script>
 
